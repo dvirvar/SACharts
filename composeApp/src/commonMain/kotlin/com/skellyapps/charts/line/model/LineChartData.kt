@@ -168,6 +168,7 @@ data class LineChartData(
         val minValue: Double?
         val maxValue: Double?
         val step: Double
+        val gridLinesCustomization: DividerCustomization?
         val dividerCustomization: DividerCustomization?
         val valueView: @Composable ((value: Double) -> Unit)?
 
@@ -175,6 +176,7 @@ data class LineChartData(
             override val minValue: Double? = null,
             override val maxValue: Double? = null,
             override val step: Double,
+            override val gridLinesCustomization: DividerCustomization? = null,
             override val dividerCustomization: DividerCustomization? = null,
             override val valueView: @Composable ((value: Double) -> Unit)? = null
         ): Axis
@@ -185,6 +187,7 @@ data class LineChartData(
             override val minValue: Double? = null,
             override val maxValue: Double? = null,
             override val step: Double,
+            override val gridLinesCustomization: DividerCustomization? = null,
             override val dividerCustomization: DividerCustomization? = null,
             override val valueView: @Composable ((value: Double) -> Unit)? = null,
         ): Axis

@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
@@ -46,7 +47,7 @@ import kotlin.math.min
 fun LineChart(
     modifier: Modifier,
     data: LineChartData,
-    onEachPoint: (DrawScope.(canvasSize: IntSize, lineTag: Byte, index: Int, offset: Offset) -> Unit)? = null,
+    onEachPoint: (DrawScope.(canvasSize: Size, lineTag: Byte, index: Int, offset: Offset) -> Unit)? = null,
     drag: LineChartData.DragCallback? = null,
     dragAfterLongPress: LineChartData.DragCallback? = null
 ) {
@@ -131,21 +132,51 @@ fun LineChart(
             data.rightAxis?.lines?.toOffsetLines(canvasSize, minXValue, maxXValue, data.xAxisLinesOffset, rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis.yOffset)
         }
     }
+    val leftAxisValues by remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis) {
+        if (data.leftAxis == null) {
+            mutableStateOf(mutableListOf())
+        } else {
+            val values = mutableListOf<Double>()
+            var value = leftAxisMinYValue
+            while (value <= leftAxisMaxYValue) {
+                values.add(value)
+                value += data.leftAxis.step
+            }
+            mutableStateOf(values)
+        }
+    }
+    val rightAxisValues by remember(rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis) {
+        if (data.rightAxis == null) {
+            mutableStateOf(mutableListOf())
+        } else {
+            val values = mutableListOf<Double>()
+            var value = rightAxisMinYValue
+            while (value <= rightAxisMaxYValue) {
+                values.add(value)
+                value += data.rightAxis.step
+            }
+            mutableStateOf(values)
+        }
+    }
+    val bottomAxisValues by remember(minXValue, maxXValue, data.bottomAxis) {
+        if (data.bottomAxis == null) {
+            mutableStateOf(mutableListOf())
+        } else {
+            val values = mutableListOf<Double>()
+            var value = minXValue
+            while (value <= maxXValue) {
+                values.add(value)
+                value += data.bottomAxis.step
+            }
+            mutableStateOf(values)
+        }
+    }
     var draggedPointDistance by remember { mutableStateOf<DraggedPointDistance?>(null) }
 
     Row(modifier) {
         data.leftAxis?.let { axis ->
             Box(Modifier.height(canvasSize.height.dp)) {
                 axis.valueView?.let {
-                    val leftAxisValues by remember(leftAxisMinYValue, leftAxisMaxYValue, axis.step) {
-                        val values = mutableListOf<Double>()
-                        var value = leftAxisMinYValue
-                        while (value <= leftAxisMaxYValue) {
-                            values.add(value)
-                            value += axis.step
-                        }
-                        mutableStateOf(values)
-                    }
                     AxisColumn(Modifier.fillMaxHeight(), axis.yOffset, true, leftAxisValues, leftAxisMinYValue, leftAxisMaxYValue) {
                         leftAxisValues.fastForEach { value ->
                             it(value)
@@ -232,23 +263,22 @@ fun LineChart(
                         }
                     }
                 },
-                canvasSize,
                 data,
+                leftAxisMinYValue,
+                leftAxisMaxYValue,
+                rightAxisMinYValue,
+                rightAxisMaxYValue,
+                minXValue,
+                maxXValue,
+                leftAxisValues,
+                rightAxisValues,
+                bottomAxisValues,
                 onEachPoint,
                 leftOffsetLines,
                 rightOffsetLines
             )
             data.bottomAxis?.let { axis ->
                 axis.valueView?.let {
-                    val bottomAxisValues by remember(minXValue, maxXValue, axis.step) {
-                        val values = mutableListOf<Double>()
-                        var value = minXValue
-                        while (value <= maxXValue) {
-                            values.add(value)
-                            value += axis.step
-                        }
-                        mutableStateOf(values)
-                    }
                     AxisRow(Modifier.fillMaxWidth(), data.xAxisLinesOffset, bottomAxisValues, minXValue, maxXValue) {
                         bottomAxisValues.fastForEach { value ->
                             it(value)
@@ -260,15 +290,6 @@ fun LineChart(
         data.rightAxis?.let { axis ->
             Box(Modifier.height(canvasSize.height.dp)) {
                 axis.valueView?.let {
-                    val rightAxisValues by remember(rightAxisMinYValue, rightAxisMaxYValue, axis.step) {
-                        val values = mutableListOf<Double>()
-                        var value = rightAxisMinYValue
-                        while (value <= rightAxisMaxYValue) {
-                            values.add(value)
-                            value += axis.step
-                        }
-                        mutableStateOf(values)
-                    }
                     AxisColumn(Modifier.fillMaxHeight(), axis.yOffset, false, rightAxisValues, rightAxisMinYValue, rightAxisMaxYValue) {
                         rightAxisValues.fastForEach { value ->
                             it(value)
@@ -283,57 +304,122 @@ fun LineChart(
 @Composable
 private fun LineChartCanvas(
     modifier: Modifier,
-    canvasSize: IntSize,
     data: LineChartData,
-    onEachPoint: (DrawScope.(canvasSize: IntSize, lineTag: Byte, index: Int, offset: Offset) -> Unit)?,
+    leftAxisMinYValue: Double,
+    leftAxisMaxYValue: Double,
+    rightAxisMinYValue: Double,
+    rightAxisMaxYValue: Double,
+    minXValue: Double,
+    maxXValue: Double,
+    leftAxisValues: MutableList<Double>,
+    rightAxisValues: MutableList<Double>,
+    bottomAxisValues: MutableList<Double>,
+    onEachPoint: (DrawScope.(canvasSize: Size, lineTag: Byte, index: Int, offset: Offset) -> Unit)?,
     leftOffsetLines: List<LineChartData.OffsetLine>?,
     rightOffsetLines: List<LineChartData.OffsetLine>?
 ) {
     Canvas(modifier) {
-        //Draw left axis divider
-        data.leftAxis?.dividerCustomization?.let {
-            val thickness = it.thickness.toPx()
-            drawLine(
-                it.brush,
-                Offset(thickness / 2f , thickness / 2f),
-                Offset(thickness / 2f, canvasSize.height.toFloat() - thickness / 2f),
-                thickness,
-                it.cap,
-                it.pathEffect,
-                it.alpha,
-                it.colorFilter,
-                it.blendMode
-            )
+        data.leftAxis?.let { axis ->
+            axis.gridLinesCustomization?.let {
+                val thickness = it.thickness.toPx()
+                leftAxisValues.fastForEach { value ->
+                    val yOffset = (size.height - (((value - leftAxisMinYValue) / (leftAxisMaxYValue - leftAxisMinYValue)) * (size.height - axis.yOffset.min - axis.yOffset.max) + axis.yOffset.min)).toFloat() + (thickness / 2)
+                    drawLine(
+                        it.brush,
+                        Offset(0f, yOffset),
+                        Offset(size.width, yOffset),
+                        thickness,
+                        it.cap,
+                        it.pathEffect,
+                        it.alpha,
+                        it.colorFilter,
+                        it.blendMode
+                    )
+                }
+            }
+            //Draw left axis divider
+            axis.dividerCustomization?.let {
+                val thickness = it.thickness.toPx()
+                drawLine(
+                    it.brush,
+                    Offset(thickness / 2f , thickness / 2f),
+                    Offset(thickness / 2f, size.height - thickness / 2f),
+                    thickness,
+                    it.cap,
+                    it.pathEffect,
+                    it.alpha,
+                    it.colorFilter,
+                    it.blendMode
+                )
+            }
         }
-        //Draw right axis divider
-        data.rightAxis?.dividerCustomization?.let {
-            val thickness = it.thickness.toPx()
-            drawLine(
-                it.brush,
-                Offset(canvasSize.width.toFloat() - thickness / 2f, thickness / 2f),
-                Offset(canvasSize.width.toFloat() - thickness / 2f, canvasSize.height.toFloat() - thickness / 2f),
-                thickness,
-                it.cap,
-                it.pathEffect,
-                it.alpha,
-                it.colorFilter,
-                it.blendMode
-            )
+        data.rightAxis?.let { axis ->
+            axis.gridLinesCustomization?.let {
+                val thickness = it.thickness.toPx()
+                rightAxisValues.fastForEach { value ->
+                    val yOffset = (size.height - (((value - rightAxisMinYValue) / (rightAxisMaxYValue - rightAxisMinYValue)) * (size.height - axis.yOffset.min - axis.yOffset.max) + axis.yOffset.min)).toFloat() + (thickness / 2)
+                    drawLine(
+                        it.brush,
+                        Offset(size.width, yOffset),
+                        Offset(0f, yOffset),
+                        thickness,
+                        it.cap,
+                        it.pathEffect,
+                        it.alpha,
+                        it.colorFilter,
+                        it.blendMode
+                    )
+                }
+            }
+            //Draw right axis divider
+            axis.dividerCustomization?.let {
+                val thickness = it.thickness.toPx()
+                drawLine(
+                    it.brush,
+                    Offset(size.width - thickness / 2f, thickness / 2f),
+                    Offset(size.width - thickness / 2f, size.height - thickness / 2f),
+                    thickness,
+                    it.cap,
+                    it.pathEffect,
+                    it.alpha,
+                    it.colorFilter,
+                    it.blendMode
+                )
+            }
         }
-        //Draw bottom axis divider
-        data.bottomAxis?.dividerCustomization?.let {
-            val thickness = it.thickness.toPx()
-            drawLine(
-                it.brush,
-                Offset(thickness / 2f, canvasSize.height.toFloat() - thickness / 2f),
-                Offset(canvasSize.width.toFloat() - thickness / 2f, canvasSize.height.toFloat() - thickness / 2f),
-                thickness,
-                it.cap,
-                it.pathEffect,
-                it.alpha,
-                it.colorFilter,
-                it.blendMode
-            )
+        data.bottomAxis?.let { axis ->
+            axis.gridLinesCustomization?.let {
+                val thickness = it.thickness.toPx()
+                bottomAxisValues.fastForEach { value ->
+                    val xOffset = (((value - minXValue) / (maxXValue - minXValue)) * (size.width - data.xAxisLinesOffset.min - data.xAxisLinesOffset.max) + data.xAxisLinesOffset.min).toFloat() + (thickness / 2)
+                    drawLine(
+                        it.brush,
+                        Offset(xOffset, 0f),
+                        Offset(xOffset, size.height),
+                        thickness,
+                        it.cap,
+                        it.pathEffect,
+                        it.alpha,
+                        it.colorFilter,
+                        it.blendMode
+                    )
+                }
+            }
+            //Draw bottom axis divider
+            axis.dividerCustomization?.let {
+                val thickness = it.thickness.toPx()
+                drawLine(
+                    it.brush,
+                    Offset(thickness / 2f, size.height - thickness / 2f),
+                    Offset(size.width - thickness / 2f, size.height - thickness / 2f),
+                    thickness,
+                    it.cap,
+                    it.pathEffect,
+                    it.alpha,
+                    it.colorFilter,
+                    it.blendMode
+                )
+            }
         }
         //Draw the lines connecting the points
         leftOffsetLines?.fastForEach { line ->
@@ -351,7 +437,7 @@ private fun LineChartCanvas(
             //Let the users config what they wants on the point
             onEachPoint?.let {
                 line.offsets.fastForEachIndexed { index, offset ->
-                    onEachPoint(this, canvasSize, line.tag, index, offset)
+                    onEachPoint(this, size, line.tag, index, offset)
                 }
             }
         }
@@ -371,7 +457,7 @@ private fun LineChartCanvas(
             //Let the users config what they wants on the point
             onEachPoint?.let {
                 line.offsets.fastForEachIndexed { index, offset ->
-                    onEachPoint(this, canvasSize, line.tag, index, offset)
+                    onEachPoint(this, size, line.tag, index, offset)
                 }
             }
         }

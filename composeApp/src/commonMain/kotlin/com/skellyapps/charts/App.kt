@@ -14,11 +14,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.line.LineChart
@@ -53,6 +56,7 @@ private val greenLine = LineChartData.Line(
 private val leftAxis = LineChartData.Axis.YAxis(
     lines = listOf(blueLine, yellowLine, greenLine),
     step = 20.0,
+    gridLinesCustomization = LineChartData.Axis.DividerCustomization(color = Color.Gray, thickness = 1.dp, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f))),
     dividerCustomization = LineChartData.Axis.DividerCustomization(color = Color.Black, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))) { value ->
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(value.roundToDecimals(1).toString())
@@ -78,6 +82,7 @@ private val bottomAxis = LineChartData.Axis.XAxis(
     0.0,
     200.0,
     10.0,
+    LineChartData.Axis.DividerCustomization(color = Color.Gray, 1.dp),
     LineChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         VerticalDivider(Modifier.height(8.dp))
