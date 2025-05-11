@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import kotlin.math.abs
 
@@ -20,7 +22,7 @@ data class LineChartData(
     val leftAxis: Axis.YAxis? = null,
     val rightAxis: Axis.YAxis? = null,
     val bottomAxis: Axis.XAxis? = null,
-    val xAxisLinesOffset: AxisOffset = AxisOffset(5, 5)
+    val xAxisLinesOffset: AxisOffset = AxisOffset(0, 0)
 ) {
     data class Line(
         val points: MutableList<Point>,
@@ -163,28 +165,67 @@ data class LineChartData(
     )
 
     sealed interface Axis {
+        val minValue: Double?
+        val maxValue: Double?
         val step: Double
         val dividerCustomization: DividerCustomization?
         val valueView: @Composable ((value: Double) -> Unit)?
 
         data class XAxis(
+            override val minValue: Double? = null,
+            override val maxValue: Double? = null,
             override val step: Double,
             override val dividerCustomization: DividerCustomization? = null,
             override val valueView: @Composable ((value: Double) -> Unit)? = null
         ): Axis
 
         data class YAxis(
-            val yOffset: AxisOffset = AxisOffset(5, 5),
+            val yOffset: AxisOffset = AxisOffset(0, 0),
             val lines: List<Line>,
+            override val minValue: Double? = null,
+            override val maxValue: Double? = null,
             override val step: Double,
             override val dividerCustomization: DividerCustomization? = null,
             override val valueView: @Composable ((value: Double) -> Unit)? = null,
         ): Axis
 
-        data class DividerCustomization(
-            val thickness: Dp = DividerDefaults.Thickness,
-            val color: Color,
-        )
+        class DividerCustomization {
+            val brush: Brush
+            val thickness: Dp
+            val cap: StrokeCap
+            val pathEffect: PathEffect?
+            @FloatRange val alpha: Float
+            val colorFilter: ColorFilter?
+            val blendMode: BlendMode
+
+            constructor(
+                brush: Brush,
+                thickness: Dp = 2.dp,
+                cap: StrokeCap = StrokeCap.Round,
+                pathEffect: PathEffect? = null,
+                @FloatRange alpha: Float = 1f,
+                colorFilter: ColorFilter? = null,
+                blendMode: BlendMode = BlendMode.Src,
+            ) {
+                this.brush = brush
+                this.thickness = thickness
+                this.cap = cap
+                this.pathEffect = pathEffect
+                this.alpha = alpha
+                this.colorFilter = colorFilter
+                this.blendMode = blendMode
+            }
+
+            constructor(
+                color: Color,
+                thickness: Dp = 2.dp,
+                cap: StrokeCap = StrokeCap.Round,
+                pathEffect: PathEffect? = null,
+                @FloatRange alpha: Float = 1f,
+                colorFilter: ColorFilter? = null,
+                blendMode: BlendMode = BlendMode.Src,
+            ): this(SolidColor(color), thickness, cap, pathEffect, alpha, colorFilter, blendMode)
+        }
     }
 
     data class AxisOffset(
@@ -194,6 +235,6 @@ data class LineChartData(
 
     class DragCallback(
         val isInRangePx: Offset.(Offset) -> Boolean,
-        val pointDragged: (index: Int, lineTag: Byte, newPosition: Line.Point) -> Unit
+        val pointDragged: (lineTag: Byte, index: Int, newPosition: Line.Point) -> Unit
     )
 }
