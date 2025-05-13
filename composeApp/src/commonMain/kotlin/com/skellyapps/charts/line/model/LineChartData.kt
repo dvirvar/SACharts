@@ -1,7 +1,6 @@
 package com.skellyapps.charts.line.model
 
 import androidx.annotation.FloatRange
-import androidx.compose.material3.DividerDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -12,8 +11,9 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope.Companion.DefaultBlendMode
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import kotlin.math.abs
@@ -128,11 +128,11 @@ data class LineChartData(
                 brush: Brush,
                 pointMode: PointMode = PointMode.Polygon,
                 thickness: Float = 5f,
-                cap: StrokeCap = StrokeCap.Round,
+                cap: StrokeCap = Stroke.DefaultCap,
                 pathEffect: PathEffect? = null,
                 @FloatRange alpha: Float = 1f,
                 colorFilter: ColorFilter? = null,
-                blendMode: BlendMode = BlendMode.Src,
+                blendMode: BlendMode = DefaultBlendMode,
             ) {
                 this.brush = brush
                 this.pointMode = pointMode
@@ -148,11 +148,11 @@ data class LineChartData(
                 color: Color,
                 pointMode: PointMode = PointMode.Polygon,
                 thickness: Float = 5f,
-                cap: StrokeCap = StrokeCap.Round,
+                cap: StrokeCap = Stroke.DefaultCap,
                 pathEffect: PathEffect? = null,
                 @FloatRange alpha: Float = 1f,
                 colorFilter: ColorFilter? = null,
-                blendMode: BlendMode = BlendMode.Src,
+                blendMode: BlendMode = DefaultBlendMode,
             ): this(SolidColor(color), pointMode, thickness, cap, pathEffect, alpha, colorFilter, blendMode)
         }
     }
@@ -168,7 +168,7 @@ data class LineChartData(
         val minValue: Double?
         val maxValue: Double?
         val step: Double
-        val gridLinesCustomization: DividerCustomization?
+        val gridLines: GridLines?
         val dividerCustomization: DividerCustomization?
         val valueView: @Composable ((value: Double) -> Unit)?
 
@@ -176,7 +176,7 @@ data class LineChartData(
             override val minValue: Double? = null,
             override val maxValue: Double? = null,
             override val step: Double,
-            override val gridLinesCustomization: DividerCustomization? = null,
+            override val gridLines: GridLines? = null,
             override val dividerCustomization: DividerCustomization? = null,
             override val valueView: @Composable ((value: Double) -> Unit)? = null
         ): Axis
@@ -187,10 +187,16 @@ data class LineChartData(
             override val minValue: Double? = null,
             override val maxValue: Double? = null,
             override val step: Double,
-            override val gridLinesCustomization: DividerCustomization? = null,
+            override val gridLines: GridLines? = null,
             override val dividerCustomization: DividerCustomization? = null,
             override val valueView: @Composable ((value: Double) -> Unit)? = null,
         ): Axis
+
+        data class GridLines(
+            val showFirstLine: Boolean = true,
+            val showLastLine: Boolean = true,
+            val customization: DividerCustomization
+        )
 
         class DividerCustomization {
             val brush: Brush
@@ -204,11 +210,11 @@ data class LineChartData(
             constructor(
                 brush: Brush,
                 thickness: Dp = 2.dp,
-                cap: StrokeCap = StrokeCap.Round,
+                cap: StrokeCap = Stroke.DefaultCap,
                 pathEffect: PathEffect? = null,
                 @FloatRange alpha: Float = 1f,
                 colorFilter: ColorFilter? = null,
-                blendMode: BlendMode = BlendMode.Src,
+                blendMode: BlendMode = DefaultBlendMode,
             ) {
                 this.brush = brush
                 this.thickness = thickness
@@ -222,11 +228,11 @@ data class LineChartData(
             constructor(
                 color: Color,
                 thickness: Dp = 2.dp,
-                cap: StrokeCap = StrokeCap.Round,
+                cap: StrokeCap = Stroke.DefaultCap,
                 pathEffect: PathEffect? = null,
                 @FloatRange alpha: Float = 1f,
                 colorFilter: ColorFilter? = null,
-                blendMode: BlendMode = BlendMode.Src,
+                blendMode: BlendMode = DefaultBlendMode,
             ): this(SolidColor(color), thickness, cap, pathEffect, alpha, colorFilter, blendMode)
         }
     }
