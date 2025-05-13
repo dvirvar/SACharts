@@ -152,43 +152,13 @@ fun LineChart(
         }
     }
     val leftAxisValues by remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis) {
-        if (data.leftAxis == null) {
-            mutableStateOf(mutableListOf())
-        } else {
-            val values = mutableListOf<Double>()
-            var value = leftAxisMinYValue
-            while (value <= leftAxisMaxYValue) {
-                values.add(value)
-                value += data.leftAxis.step
-            }
-            mutableStateOf(values)
-        }
+        mutableStateOf(data.leftAxis?.value?.getValues(leftAxisMinYValue, leftAxisMaxYValue) ?: listOf())
     }
     val rightAxisValues by remember(rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis) {
-        if (data.rightAxis == null) {
-            mutableStateOf(mutableListOf())
-        } else {
-            val values = mutableListOf<Double>()
-            var value = rightAxisMinYValue
-            while (value <= rightAxisMaxYValue) {
-                values.add(value)
-                value += data.rightAxis.step
-            }
-            mutableStateOf(values)
-        }
+        mutableStateOf(data.rightAxis?.value?.getValues(rightAxisMinYValue, rightAxisMaxYValue) ?: listOf())
     }
-    val bottomAxisValues by remember(minXValue, maxXValue, data.bottomAxis) {
-        if (data.bottomAxis == null) {
-            mutableStateOf(mutableListOf())
-        } else {
-            val values = mutableListOf<Double>()
-            var value = minXValue
-            while (value <= maxXValue) {
-                values.add(value)
-                value += data.bottomAxis.step
-            }
-            mutableStateOf(values)
-        }
+    val bottomAxisValues: List<Double> by remember(minXValue, maxXValue, data.bottomAxis) {
+        mutableStateOf(data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf())
     }
     var zoom by remember { mutableStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -349,9 +319,9 @@ private fun LineChartCanvas(
     rightAxisMaxYValue: Double,
     minXValue: Double,
     maxXValue: Double,
-    leftAxisValues: MutableList<Double>,
-    rightAxisValues: MutableList<Double>,
-    bottomAxisValues: MutableList<Double>,
+    leftAxisValues: List<Double>,
+    rightAxisValues: List<Double>,
+    bottomAxisValues: List<Double>,
     onEachPoint: (DrawScope.(canvasSize: Size, lineTag: Byte, index: Int, offset: Offset) -> Unit)?,
     leftOffsetLines: List<LineChartData.OffsetLine>?,
     rightOffsetLines: List<LineChartData.OffsetLine>?

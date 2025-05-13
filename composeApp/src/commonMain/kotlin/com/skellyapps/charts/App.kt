@@ -52,7 +52,7 @@ private val greenLine = LineChartData.Line(
 )
 private val leftAxis = LineChartData.Axis.YAxis(
     lines = listOf(blueLine, yellowLine, greenLine),
-    step = 20.0,
+    value = LineChartData.Axis.Value.Step(20.0),
     gridLines = LineChartData.Axis.GridLines(customization = LineChartData.Axis.DividerCustomization(color = Color.Gray, thickness = 1.dp, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))),
     dividerCustomization = LineChartData.Axis.DividerCustomization(color = Color.Black, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))) { value ->
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -68,7 +68,7 @@ private val redLine = LineChartData.Line(
 )
 private val rightAxis = LineChartData.Axis.YAxis(
     lines = listOf(redLine),
-    step = 20.0,
+    value = LineChartData.Axis.Value.Step(20.0),
     dividerCustomization = LineChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
     Row(verticalAlignment = Alignment.CenterVertically) {
         HorizontalDivider(Modifier.width(8.dp))
@@ -78,7 +78,7 @@ private val rightAxis = LineChartData.Axis.YAxis(
 private val bottomAxis = LineChartData.Axis.XAxis(
     0.0,
     200.0,
-    10.0,
+    LineChartData.Axis.Value.Fixed(8),
     LineChartData.Axis.GridLines(false, true, LineChartData.Axis.DividerCustomization(color = Color.Gray, 1.dp)),
     LineChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {

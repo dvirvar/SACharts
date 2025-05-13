@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
+import kotlin.jvm.JvmInline
 import kotlin.math.abs
 
 data class LineChartData(
@@ -167,7 +168,7 @@ data class LineChartData(
     sealed interface Axis {
         val minValue: Double?
         val maxValue: Double?
-        val step: Double
+        val value: Value
         val gridLines: GridLines?
         val dividerCustomization: DividerCustomization?
         val valueView: @Composable ((value: Double) -> Unit)?
@@ -175,7 +176,7 @@ data class LineChartData(
         data class XAxis(
             override val minValue: Double? = null,
             override val maxValue: Double? = null,
-            override val step: Double,
+            override val value: Value,
             override val gridLines: GridLines? = null,
             override val dividerCustomization: DividerCustomization? = null,
             override val valueView: @Composable ((value: Double) -> Unit)? = null
@@ -186,11 +187,41 @@ data class LineChartData(
             val lines: List<Line>,
             override val minValue: Double? = null,
             override val maxValue: Double? = null,
-            override val step: Double,
+            override val value: Value,
             override val gridLines: GridLines? = null,
             override val dividerCustomization: DividerCustomization? = null,
             override val valueView: @Composable ((value: Double) -> Unit)? = null,
         ): Axis
+
+        sealed interface Value {
+            fun getValues(minValue: Double, maxValue: Double): List<Double>
+            @JvmInline
+            value class Step(val step: Double): Value {
+                init {
+                    if (step <= 0) {
+                        throw IllegalArgumentException("Step must be greater than 0")
+                    }
+                }
+                override fun getValues(minValue: Double, maxValue: Double): List<Double> {
+                    val values = mutableListOf<Double>()
+                    var value = minValue
+                    while (value <= maxValue) {
+                        values.add(value)
+                        value += step
+                    }
+                    return values
+                }
+            }
+            @JvmInline
+            value class Fixed(val values: Int): Value {
+                init {
+                    if (values < 1) {
+                        throw IllegalArgumentException("Values must be greater than 0")
+                    }
+                }
+                override fun getValues(minValue: Double, maxValue: Double) = (0..values).map { minValue + (maxValue - minValue) * it / (values - 1).toDouble() }
+            }
+        }
 
         data class GridLines(
             val showFirstLine: Boolean = true,
