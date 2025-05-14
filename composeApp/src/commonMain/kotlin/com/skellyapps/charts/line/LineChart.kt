@@ -31,18 +31,19 @@ import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastMaxOfOrDefault
-import androidx.compose.ui.util.fastMinByOrNull
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.zIndex
-import com.skellyapps.charts.line.extension.getClosestPointIfInRange
+import com.skellyapps.charts.line.extension.detectTransformGestures
+import com.skellyapps.charts.line.extension.getClosestIndexDistance
 import com.skellyapps.charts.line.extension.getMaxX
 import com.skellyapps.charts.line.extension.getMaxY
 import com.skellyapps.charts.line.extension.getMinX
 import com.skellyapps.charts.line.extension.getMinY
 import com.skellyapps.charts.line.extension.toLineChartPoint
 import com.skellyapps.charts.line.extension.toOffsetLines
-import com.skellyapps.charts.line.model.DraggedPointDistance
+import com.skellyapps.charts.line.model.DraggedPoint
 import com.skellyapps.charts.line.model.LineChartData
+import com.skellyapps.charts.line.model.Zoom
 import kotlin.math.max
 import kotlin.math.min
 
@@ -51,8 +52,9 @@ fun LineChart(
     modifier: Modifier,
     data: LineChartData,
     onEachPoint: (DrawScope.(canvasSize: Size, lineTag: Byte, index: Int, offset: Offset) -> Unit)? = null,
+    zoom: Zoom? = null,
     drag: LineChartData.DragCallback? = null,
-    dragAfterLongPress: LineChartData.DragCallback? = null
+    dragAfterLongPress: LineChartData.DragCallback? = null,
 ) {
     val density = LocalDensity.current
     var canvasSize by remember { mutableStateOf(IntSize(0,0)) }
@@ -160,9 +162,9 @@ fun LineChart(
     val bottomAxisValues: List<Double> by remember(minXValue, maxXValue, data.bottomAxis) {
         mutableStateOf(data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf())
     }
-    var zoom by remember { mutableStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    var draggedPointDistance by remember { mutableStateOf<DraggedPointDistance?>(null) }
+    var canvasZoom by remember { mutableStateOf(1f) }
+    var canvasOffset by remember { mutableStateOf(Offset.Zero) }
+    var draggedPoint by remember { mutableStateOf<DraggedPoint?>(null) }
 
     Row(modifier) {
         data.leftAxis?.let { axis ->
@@ -183,47 +185,71 @@ fun LineChart(
                 .onSizeChanged {
                     canvasSize = it
                 }
-//                .pointerInput(Unit) {
-//                    detectTransformGestures { centroid, pan, gestureZoom, gestureRotate ->
-//                        val oldScale = zoom
-//                        val newScale = (zoom * gestureZoom).coerceIn(1f, 5f)
-//                        val newOffset = (offset + centroid / oldScale) - (centroid / newScale + pan / oldScale)
-//                        offset = newOffset.copy(newOffset.x.coerceIn(0f, canvasSize.width - canvasSize.width / newScale), newOffset.y.coerceIn(0f, canvasSize.height - canvasSize.height / newScale))
-//                        zoom = newScale
-//                    }
-//                }
                 .pointerInput(Unit) {
-                    if (drag != null) {
-                        detectDragGestures(onDragStart = { offset ->
-                            val draggedPointsDistance = mutableListOf<DraggedPointDistance>()
-                            if (leftOffsetLines != null) {
-                                leftOffsetLines!!.fastForEach {
-                                    it.getClosestPointIfInRange(offset, drag.isInRangePx, true)?.let {
-                                        draggedPointsDistance.add(it)
+                    if (zoom != null) {
+                        detectTransformGestures(
+                            onGesture = { centroid,
+                                          pan,
+                                          gestureZoom,
+                                          _,
+                                          changes ->
+                                if (changes.size > 1) {
+                                    val oldScale = canvasZoom
+                                    val newScale = (canvasZoom * gestureZoom).coerceIn(1f, zoom.max)
+                                    val newOffset = (canvasOffset + centroid / oldScale) - (centroid / newScale + pan / oldScale)
+                                    canvasOffset = newOffset.copy(newOffset.x.coerceIn(0f, canvasSize.width - canvasSize.width / newScale), newOffset.y.coerceIn(0f, canvasSize.height - canvasSize.height / newScale))
+                                    canvasZoom = newScale
+                                    changes.forEach { it.consume() }
+                                }
+                            }
+                        )
+                    }
+                }
+                .pointerInput(Unit) {
+                    detectDragGestures(onDragStart = { offset ->
+                        if (drag == null) {
+                            return@detectDragGestures
+                        }
+                        val offset = offset / canvasZoom + canvasOffset
+                        var minDistance = -1f
+                        var minDistanceDraggedPoint: DraggedPoint? = null
+                        if (leftOffsetLines != null) {
+                            leftOffsetLines!!.fastForEach { line ->
+                                line.getClosestIndexDistance(offset, drag.isInRangePx)?.let {
+                                    if (minDistance < 0f || it.second < minDistance) {
+                                        minDistance = it.second
+                                        minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, true)
                                     }
                                 }
                             }
-                            if (rightOffsetLines != null) {
-                                rightOffsetLines!!.fastForEach {
-                                    it.getClosestPointIfInRange(offset, drag.isInRangePx, false)?.let {
-                                        draggedPointsDistance.add(it)
+                        }
+                        if (rightOffsetLines != null) {
+                            rightOffsetLines!!.fastForEach { line ->
+                                line.getClosestIndexDistance(offset, drag.isInRangePx)?.let {
+                                    if (minDistance < 0f || it.second < minDistance) {
+                                        minDistance = it.second
+                                        minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, false)
                                     }
                                 }
                             }
-                            draggedPointDistance = draggedPointsDistance.fastMinByOrNull { it.distance }
-                        }, onDragEnd = {draggedPointDistance = null}, onDragCancel = {draggedPointDistance = null}) { change, offset ->
-                            if (draggedPointDistance != null) {
-                                val draggedPoint = draggedPointDistance!!.draggedPoint
-                                val point = change.position.toLineChartPoint(
-                                    data,
-                                    draggedPointDistance!!,
-                                    canvasSize,
-                                    minXValue,
-                                    maxXValue,
-                                    if (draggedPointDistance!!.isLeftAxis) leftAxisMinYValue else rightAxisMinYValue,
-                                    if (draggedPointDistance!!.isLeftAxis) leftAxisMaxYValue else rightAxisMaxYValue
-                                )
-                                drag.pointDragged(draggedPoint.lineTag, draggedPoint.index, point)
+                        }
+                        draggedPoint = minDistanceDraggedPoint
+                    }, onDragEnd = {draggedPoint = null}, onDragCancel = {draggedPoint = null}) { change, offset ->
+                        if (drag != null && draggedPoint != null) {
+                            val position = change.position / canvasZoom + canvasOffset
+                            val point = position.toLineChartPoint(
+                                data,
+                                draggedPoint!!.isLeftAxis,
+                                canvasSize,
+                                minXValue,
+                                maxXValue,
+                                if (draggedPoint!!.isLeftAxis) leftAxisMinYValue else rightAxisMinYValue,
+                                if (draggedPoint!!.isLeftAxis) leftAxisMaxYValue else rightAxisMaxYValue
+                            )
+                            drag.pointDragged(draggedPoint!!.lineTag, draggedPoint!!.index, point)
+                        } else {
+                            canvasOffset = (canvasOffset - offset).run {
+                                Offset(x.coerceIn(0f, canvasSize.width - canvasSize.width / canvasZoom), y.coerceIn(0f, canvasSize.height - canvasSize.height / canvasZoom))
                             }
                         }
                     }
@@ -231,44 +257,52 @@ fun LineChart(
                 .pointerInput(Unit) {
                     if (dragAfterLongPress != null) {
                         detectDragGesturesAfterLongPress(onDragStart = { offset ->
-                            val draggedPointsDistance = mutableListOf<DraggedPointDistance>()
+                            val offset = offset / canvasZoom + canvasOffset
+                            var minDistance = -1f
+                            var minDistanceDraggedPoint: DraggedPoint? = null
                             if (leftOffsetLines != null) {
-                                leftOffsetLines!!.fastForEach {
-                                    it.getClosestPointIfInRange(offset, dragAfterLongPress.isInRangePx, true)?.let {
-                                        draggedPointsDistance.add(it)
+                                leftOffsetLines!!.fastForEach { line ->
+                                    line.getClosestIndexDistance(offset, dragAfterLongPress.isInRangePx)?.let {
+                                        if (minDistance < 0f || it.second < minDistance) {
+                                            minDistance = it.second
+                                            minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, true)
+                                        }
                                     }
                                 }
                             }
                             if (rightOffsetLines != null) {
-                                rightOffsetLines!!.fastForEach {
-                                    it.getClosestPointIfInRange(offset, dragAfterLongPress.isInRangePx, false)?.let {
-                                        draggedPointsDistance.add(it)
+                                rightOffsetLines!!.fastForEach { line ->
+                                    line.getClosestIndexDistance(offset, dragAfterLongPress.isInRangePx)?.let {
+                                        if (minDistance < 0f || it.second < minDistance) {
+                                            minDistance = it.second
+                                            minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, false)
+                                        }
                                     }
                                 }
                             }
-                            draggedPointDistance = draggedPointsDistance.fastMinByOrNull { it.distance }
-                        }, onDragEnd = {draggedPointDistance = null}, onDragCancel = {draggedPointDistance = null}) { change, offset ->
-                            if (draggedPointDistance != null) {
-                                val draggedPoint = draggedPointDistance!!.draggedPoint
-                                val point = change.position.toLineChartPoint(
+                            draggedPoint = minDistanceDraggedPoint
+                        }, onDragEnd = {draggedPoint = null}, onDragCancel = {draggedPoint = null}) { change, offset ->
+                            if (draggedPoint != null) {
+                                val position = change.position / canvasZoom + canvasOffset
+                                val point = position.toLineChartPoint(
                                     data,
-                                    draggedPointDistance!!,
+                                    draggedPoint!!.isLeftAxis,
                                     canvasSize,
                                     minXValue,
                                     maxXValue,
-                                    if (draggedPointDistance!!.isLeftAxis) leftAxisMinYValue else rightAxisMinYValue,
-                                    if (draggedPointDistance!!.isLeftAxis) leftAxisMaxYValue else rightAxisMaxYValue
+                                    if (draggedPoint!!.isLeftAxis) leftAxisMinYValue else rightAxisMinYValue,
+                                    if (draggedPoint!!.isLeftAxis) leftAxisMaxYValue else rightAxisMaxYValue
                                 )
-                                dragAfterLongPress.pointDragged(draggedPoint.lineTag, draggedPoint.index, point)
+                                dragAfterLongPress.pointDragged(draggedPoint!!.lineTag, draggedPoint!!.index, point)
                             }
                         }
                     }
                 }
                     .graphicsLayer {
-                    translationX = -offset.x * zoom
-                    translationY = -offset.y * zoom
-                    scaleX = zoom
-                    scaleY = zoom
+                    translationX = -canvasOffset.x * canvasZoom
+                    translationY = -canvasOffset.y * canvasZoom
+                    scaleX = canvasZoom
+                    scaleY = canvasZoom
                     transformOrigin = TransformOrigin(0f, 0f)
                 },
                 data,
@@ -444,7 +478,7 @@ private fun LineChartCanvas(
                 line.offsets,
                 line.customization.pointMode,
                 line.customization.brush,
-                line.customization.thickness,
+                line.customization.thickness.toPx(),
                 line.customization.cap,
                 line.customization.pathEffect,
                 line.customization.alpha,
@@ -464,7 +498,7 @@ private fun LineChartCanvas(
                 line.offsets,
                 line.customization.pointMode,
                 line.customization.brush,
-                line.customization.thickness,
+                line.customization.thickness.toPx(),
                 line.customization.cap,
                 line.customization.pathEffect,
                 line.customization.alpha,

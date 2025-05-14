@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.line.LineChart
 import com.skellyapps.charts.line.model.LineChartData
+import com.skellyapps.charts.line.model.Zoom
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.abs
 import kotlin.math.max
@@ -89,7 +90,7 @@ private val bottomAxis = LineChartData.Axis.XAxis(
 
 private val lines = listOf(blueLine, yellowLine, greenLine, redLine)
 private val dragCallback = LineChartData.DragCallback(isInRangePx = { offset ->
-    abs(x - offset.x) <= 10 && abs(y - offset.y) <= 10
+    abs(x - offset.x) <= 40 && abs(y - offset.y) <= 40
 }, pointDragged = { lineTag, index, newPosition ->
     lines[lineTag.toInt()].points[index] = newPosition
 })
@@ -109,7 +110,7 @@ fun App() {
             { canvasSize, lineTag, index, offset ->
                 drawCircle(
                     colors[lineTag.toInt()],
-                    radius = 5f,
+                    radius = 5.dp.toPx(),
                     offset
                 )
                 val point = lines[lineTag.toInt()].points[index]
@@ -124,6 +125,7 @@ fun App() {
                     topLeft = topLeftOffset
                 )
             },
+            Zoom(3.5f),
             dragCallback
         )
     }

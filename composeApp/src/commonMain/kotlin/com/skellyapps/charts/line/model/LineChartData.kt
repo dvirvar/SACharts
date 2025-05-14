@@ -118,7 +118,7 @@ data class LineChartData(
         class Customization {
             val brush: Brush
             val pointMode: PointMode
-            val thickness: Float
+            val thickness: Dp
             val cap: StrokeCap
             val pathEffect: PathEffect?
             @FloatRange val alpha: Float
@@ -128,7 +128,7 @@ data class LineChartData(
             constructor(
                 brush: Brush,
                 pointMode: PointMode = PointMode.Polygon,
-                thickness: Float = 5f,
+                thickness: Dp = 5.dp,
                 cap: StrokeCap = Stroke.DefaultCap,
                 pathEffect: PathEffect? = null,
                 @FloatRange alpha: Float = 1f,
@@ -148,7 +148,7 @@ data class LineChartData(
             constructor(
                 color: Color,
                 pointMode: PointMode = PointMode.Polygon,
-                thickness: Float = 5f,
+                thickness: Dp = 5.dp,
                 cap: StrokeCap = Stroke.DefaultCap,
                 pathEffect: PathEffect? = null,
                 @FloatRange alpha: Float = 1f,
