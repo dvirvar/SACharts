@@ -79,8 +79,8 @@ private val rightAxis = LineChartData.Axis.YAxis(
 private val bottomAxis = LineChartData.Axis.XAxis(
     0.0,
     200.0,
-    LineChartData.Axis.Value.Fixed(8),
-    LineChartData.Axis.GridLines(false, true, LineChartData.Axis.DividerCustomization(color = Color.Gray, 1.dp)),
+    LineChartData.Axis.Value.Step(40.0),
+    LineChartData.Axis.GridLines(false, false, LineChartData.Axis.DividerCustomization(color = Color.Gray, 1.dp)),
     LineChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         VerticalDivider(Modifier.height(8.dp))
@@ -101,7 +101,7 @@ fun App() {
     MaterialTheme {
         val textMeasurer = rememberTextMeasurer()
         LineChart(
-            Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            Modifier.fillMaxSize().padding(16.dp, 8.dp, 16.dp),
             LineChartData(
                 leftAxis = leftAxis,
                 rightAxis = rightAxis,
@@ -110,7 +110,7 @@ fun App() {
             { canvasSize, lineTag, index, offset ->
                 drawCircle(
                     colors[lineTag.toInt()],
-                    radius = 5.dp.toPx(),
+                    5.dp.toPx(),
                     offset
                 )
                 val point = lines[lineTag.toInt()].points[index]

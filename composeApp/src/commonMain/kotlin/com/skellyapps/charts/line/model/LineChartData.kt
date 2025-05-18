@@ -219,7 +219,10 @@ data class LineChartData(
                         throw IllegalArgumentException("Values must be greater than 0")
                     }
                 }
-                override fun getValues(minValue: Double, maxValue: Double) = (0..values).map { minValue + (maxValue - minValue) * it / (values - 1).toDouble() }
+                override fun getValues(minValue: Double, maxValue: Double) = when (values) {
+                    1 -> listOf(minValue)
+                    else -> (0..<values).map { minValue + (maxValue - minValue) * it / (values - 1).toDouble() }
+                }
             }
         }
 

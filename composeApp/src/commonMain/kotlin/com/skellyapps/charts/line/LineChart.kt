@@ -58,6 +58,8 @@ fun LineChart(
 ) {
     val density = LocalDensity.current
     var canvasSize by remember { mutableStateOf(IntSize(0,0)) }
+    var canvasZoom by remember { mutableStateOf(1f) }
+    var canvasOffset by remember { mutableStateOf(Offset.Zero) }
     val minXValue by remember {
         derivedStateOf {
             if (data.bottomAxis?.minValue != null) {
@@ -162,15 +164,13 @@ fun LineChart(
     val bottomAxisValues: List<Double> by remember(minXValue, maxXValue, data.bottomAxis) {
         mutableStateOf(data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf())
     }
-    var canvasZoom by remember { mutableStateOf(1f) }
-    var canvasOffset by remember { mutableStateOf(Offset.Zero) }
     var draggedPoint by remember { mutableStateOf<DraggedPoint?>(null) }
 
     Row(modifier) {
         data.leftAxis?.let { axis ->
             Box(Modifier.height(with(density) { canvasSize.height.toDp() })) {
                 axis.valueView?.let {
-                    AxisColumn(Modifier.fillMaxHeight(), axis.yOffset, true, leftAxisValues, leftAxisMinYValue, leftAxisMaxYValue) {
+                    AxisColumn(Modifier.fillMaxHeight(), canvasZoom, canvasOffset.y, axis.yOffset, true, leftAxisValues, leftAxisMinYValue, leftAxisMaxYValue) {
                         leftAxisValues.fastForEach { value ->
                             it(value)
                         }
@@ -248,7 +248,7 @@ fun LineChart(
                             )
                             drag.pointDragged(draggedPoint!!.lineTag, draggedPoint!!.index, point)
                         } else {
-                            canvasOffset = (canvasOffset - offset).run {
+                            canvasOffset = (canvasOffset - offset / canvasZoom).run {
                                 Offset(x.coerceIn(0f, canvasSize.width - canvasSize.width / canvasZoom), y.coerceIn(0f, canvasSize.height - canvasSize.height / canvasZoom))
                             }
                         }
@@ -298,7 +298,7 @@ fun LineChart(
                         }
                     }
                 }
-                    .graphicsLayer {
+                .graphicsLayer {
                     translationX = -canvasOffset.x * canvasZoom
                     translationY = -canvasOffset.y * canvasZoom
                     scaleX = canvasZoom
@@ -321,7 +321,7 @@ fun LineChart(
             )
             data.bottomAxis?.let { axis ->
                 axis.valueView?.let {
-                    AxisRow(Modifier.fillMaxWidth().zIndex(-1f), data.xAxisLinesOffset, bottomAxisValues, minXValue, maxXValue) {
+                    AxisRow(Modifier.fillMaxWidth().zIndex(-1f), canvasZoom, canvasOffset.x, data.xAxisLinesOffset, bottomAxisValues, minXValue, maxXValue) {
                         bottomAxisValues.fastForEach { value ->
                             it(value)
                         }
@@ -332,7 +332,7 @@ fun LineChart(
         data.rightAxis?.let { axis ->
             Box(Modifier.height(with(density) { canvasSize.height.toDp() })) {
                 axis.valueView?.let {
-                    AxisColumn(Modifier.fillMaxHeight().zIndex(-1f), axis.yOffset, false, rightAxisValues, rightAxisMinYValue, rightAxisMaxYValue) {
+                    AxisColumn(Modifier.fillMaxHeight().zIndex(-1f), canvasZoom, canvasOffset.y, axis.yOffset, false, rightAxisValues, rightAxisMinYValue, rightAxisMaxYValue) {
                         rightAxisValues.fastForEach { value ->
                             it(value)
                         }
@@ -518,6 +518,8 @@ private fun LineChartCanvas(
 @Composable
 private fun AxisRow(
     modifier: Modifier = Modifier,
+    canvasScale: Float,
+    canvasXOffset: Float,
     axisOffset:  LineChartData.AxisOffset,
     values: List<Double>,
     minXValue: Double,
@@ -535,13 +537,19 @@ private fun AxisRow(
             measurable.measure(constraints)
         }
         val maxHeight = placeables.fastMaxOfOrDefault(0) { it.height }
+        val xRange = maxXValue - minXValue
+        val scaledCanvasWidth = canvasScale * (constraints.maxWidth - axisOffset.min - axisOffset.max)
+        val scaledCanvasOffset = (axisOffset.min - canvasXOffset) * canvasScale
+        val errorTolerance = constraints.maxWidth + 0.01
         // Set the size of the layout as big as it can
         layout(constraints.maxWidth, maxHeight) {
             // Place children in the parent layout
             placeables.fastForEachIndexed { index, placeable ->
                 // Position item on the screen
-                val xOffset = ((((values[index] - minXValue) / (maxXValue - minXValue)) * (constraints.maxWidth - axisOffset.min - axisOffset.max) + axisOffset.min) - (placeable.width / 2.0)).fastRoundToInt()
-                placeable.placeRelative(x = xOffset, y = 0)
+                val xOffset = (((values[index] - minXValue) / xRange) * scaledCanvasWidth + scaledCanvasOffset)
+                if (xOffset >= 0.0 && xOffset <= errorTolerance) {
+                    placeable.placeRelative(x = (xOffset - (placeable.width / 2.0)).fastRoundToInt(), y = 0)
+                }
             }
         }
     }
@@ -550,6 +558,8 @@ private fun AxisRow(
 @Composable
 private fun AxisColumn(
     modifier: Modifier = Modifier,
+    canvasScale: Float,
+    canvasYOffset: Float,
     axisOffset: LineChartData.AxisOffset,
     leftAxis: Boolean,
     values: List<Double>,
@@ -568,16 +578,23 @@ private fun AxisColumn(
             measurable.measure(constraints)
         }
         val maxWidth = placeables.fastMaxOfOrDefault(0) { it.width }
+        val yRange = maxYValue - minYValue
+        val scaledCanvasHeight = canvasScale * (constraints.maxHeight - axisOffset.min - axisOffset.max)
+        val scaledCanvasOffset = (axisOffset.min + canvasYOffset) * canvasScale
+        val errorTolerance = constraints.maxHeight + 0.01
         // Set the size of the layout as big as it can
         layout(maxWidth, constraints.maxHeight) {
             // Place children in the parent layout
             placeables.fastForEachIndexed { index, placeable ->
                 // Position item on the screen
-                val yOffset = ((constraints.maxHeight - (((values[index] - minYValue) / (maxYValue - minYValue)) * (constraints.maxHeight - axisOffset.min - axisOffset.max) + axisOffset.min)) - (placeable.height / 2.0)).fastRoundToInt()
-                if (leftAxis) {
-                    placeable.placeRelative(x = maxWidth - placeable.width, y = yOffset)
-                } else {
-                    placeable.placeRelative(x = 0, y = yOffset)
+                val yOffset = (constraints.maxHeight * canvasScale - (((values[index] - minYValue) / yRange) * scaledCanvasHeight + scaledCanvasOffset))
+                if (yOffset >= 0.0 && yOffset <= errorTolerance) {
+                    val y = (yOffset - (placeable.height / 2.0)).fastRoundToInt()
+                    if (leftAxis) {
+                        placeable.placeRelative(x = maxWidth - placeable.width, y = y)
+                    } else {
+                        placeable.placeRelative(x = 0, y = y)
+                    }
                 }
             }
         }
