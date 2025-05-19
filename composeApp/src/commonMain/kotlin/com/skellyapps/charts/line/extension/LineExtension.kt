@@ -56,7 +56,8 @@ internal inline fun LineChartData.Line.toOffsetLine(
         points.toCanvasOffsets(canvasSize, minXValue, maxXValue, xOffset, minYValue, maxYValue, yOffset),
         pointsOrder,
         tag,
-        customization
+        customization,
+        fillCustomization
     )
 
 internal inline fun List<LineChartData.Line>.toOffsetLines(

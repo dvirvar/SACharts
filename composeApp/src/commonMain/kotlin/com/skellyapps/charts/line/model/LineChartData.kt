@@ -8,11 +8,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope.Companion.DefaultBlendMode
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
@@ -29,19 +30,20 @@ data class LineChartData(
         val points: MutableList<Point>,
         val pointsOrder: PointsOrder,
         val tag: Byte,
-        val customization: Customization
+        val customization: Customization,
+        val fillCustomization: FillCustomization? = null,
     ) {
         data class Point(
             val x: Double,
             val y: Double
         )
         sealed interface PointsOrder {
-            fun getClosestIndexDistance(offsets: List<Offset>, touchPoint: Offset, isInRange: Offset.(Offset) -> Boolean): Pair<Int, Float>?
+            fun getClosestIndexDistance(offsets: List<Offset>, touchPoint: Offset, isInRange: (Offset, Offset) -> Boolean): Pair<Int, Float>?
             data object Unordered: PointsOrder {
                 override fun getClosestIndexDistance(
                     offsets: List<Offset>,
                     touchPoint: Offset,
-                    isInRange: Offset.(Offset) -> Boolean,
+                    isInRange: (Offset, Offset) -> Boolean,
                 ): Pair<Int, Float>? {
                     var closestIndexDistance: Pair<Int, Float>? = null
                     offsets.fastForEachIndexed { index, offset ->
@@ -61,7 +63,7 @@ data class LineChartData(
                     index: Int,
                     offsets: List<Offset>,
                     touchPoint: Offset,
-                    isInRange: Offset.(Offset) -> Boolean,
+                    isInRange: (Offset, Offset) -> Boolean,
                 ): Pair<Int, Float>? {
                     var closestIndexDistance: Pair<Int, Float>? = null
                     if (index < 0) {
@@ -117,29 +119,62 @@ data class LineChartData(
         }
         class Customization {
             val brush: Brush
-            val pointMode: PointMode
+            @FloatRange val alpha: Float
             val thickness: Dp
+            val miter: Float
             val cap: StrokeCap
+            val join: StrokeJoin
             val pathEffect: PathEffect?
+            val colorFilter: ColorFilter?
+            val blendMode: BlendMode
+
+            constructor(
+                brush: Brush,
+                @FloatRange alpha: Float = 1f,
+                thickness: Dp = 5.dp,
+                miter: Float = Stroke.DefaultMiter,
+                cap: StrokeCap = Stroke.DefaultCap,
+                join: StrokeJoin = Stroke.DefaultJoin,
+                pathEffect: PathEffect? = null,
+                colorFilter: ColorFilter? = null,
+                blendMode: BlendMode = DefaultBlendMode,
+            ) {
+                this.brush = brush
+                this.alpha = alpha
+                this.thickness = thickness
+                this.miter = miter
+                this.cap = cap
+                this.join = join
+                this.pathEffect = pathEffect
+                this.colorFilter = colorFilter
+                this.blendMode = blendMode
+            }
+
+            constructor(
+                color: Color,
+                @FloatRange alpha: Float = 1f,
+                thickness: Dp = 5.dp,
+                miter: Float = Stroke.DefaultMiter,
+                cap: StrokeCap = Stroke.DefaultCap,
+                join: StrokeJoin = Stroke.DefaultJoin,
+                pathEffect: PathEffect? = null,
+                colorFilter: ColorFilter? = null,
+                blendMode: BlendMode = DefaultBlendMode,
+            ): this(SolidColor(color), alpha, thickness, miter, cap, join, pathEffect, colorFilter, blendMode)
+        }
+        class FillCustomization {
+            val brush: Brush
             @FloatRange val alpha: Float
             val colorFilter: ColorFilter?
             val blendMode: BlendMode
 
             constructor(
                 brush: Brush,
-                pointMode: PointMode = PointMode.Polygon,
-                thickness: Dp = 5.dp,
-                cap: StrokeCap = Stroke.DefaultCap,
-                pathEffect: PathEffect? = null,
                 @FloatRange alpha: Float = 1f,
                 colorFilter: ColorFilter? = null,
                 blendMode: BlendMode = DefaultBlendMode,
             ) {
                 this.brush = brush
-                this.pointMode = pointMode
-                this.thickness = thickness
-                this.cap = cap
-                this.pathEffect = pathEffect
                 this.alpha = alpha
                 this.colorFilter = colorFilter
                 this.blendMode = blendMode
@@ -147,14 +182,10 @@ data class LineChartData(
 
             constructor(
                 color: Color,
-                pointMode: PointMode = PointMode.Polygon,
-                thickness: Dp = 5.dp,
-                cap: StrokeCap = Stroke.DefaultCap,
-                pathEffect: PathEffect? = null,
                 @FloatRange alpha: Float = 1f,
                 colorFilter: ColorFilter? = null,
                 blendMode: BlendMode = DefaultBlendMode,
-            ): this(SolidColor(color), pointMode, thickness, cap, pathEffect, alpha, colorFilter, blendMode)
+            ): this(SolidColor(color), alpha, colorFilter, blendMode)
         }
     }
 
@@ -162,7 +193,8 @@ data class LineChartData(
         val offsets: List<Offset>,
         val pointsOrder: Line.PointsOrder,
         val tag: Byte,
-        val customization: Line.Customization
+        val customization: Line.Customization,
+        val fillCustomization: Line.FillCustomization?
     )
 
     sealed interface Axis {
@@ -276,8 +308,8 @@ data class LineChartData(
         val max: Int
     )
 
-    class DragCallback(
-        val isInRangePx: Offset.(Offset) -> Boolean,
+    class PointDragCallback(
+        val isPointInRange: Density.(point: Offset, press: Offset) -> Boolean,
         val pointDragged: (lineTag: Byte, index: Int, newPosition: Line.Point) -> Unit
     )
 }

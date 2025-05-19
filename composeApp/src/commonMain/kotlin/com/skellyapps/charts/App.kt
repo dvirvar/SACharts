@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
@@ -25,7 +26,6 @@ import com.skellyapps.charts.line.LineChart
 import com.skellyapps.charts.line.model.LineChartData
 import com.skellyapps.charts.line.model.Zoom
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.pow
 import kotlin.random.Random
@@ -39,17 +39,19 @@ private val blueLine = LineChartData.Line(
     (1..12).map { LineChartData.Line.Point(it * Random.nextInt(5, 15).toDouble(), Random.nextDouble(0.0, 300.0)) }.sortedBy { it.x }.toMutableStateList(),
     LineChartData.Line.PointsOrder.Ordered.X,
     blueTag,
-    LineChartData.Line.Customization(colors[blueTag.toInt()]))
+    LineChartData.Line.Customization(colors[blueTag.toInt()], join = StrokeJoin.Round)
+)
 private val yellowLine = LineChartData.Line(
     (1..8).map { LineChartData.Line.Point(it * Random.nextInt(5, 15).toDouble(), Random.nextDouble(0.0, 100.0)) }.sortedBy { it.x }.toMutableStateList(),
     LineChartData.Line.PointsOrder.Ordered.X,
     yellowTag,
-    LineChartData.Line.Customization(colors[yellowTag.toInt()]))
+    LineChartData.Line.Customization(colors[yellowTag.toInt()], join = StrokeJoin.Round)
+)
 private val greenLine = LineChartData.Line(
     (1..5).map { LineChartData.Line.Point(it * Random.nextInt(5, 20).toDouble(), Random.nextDouble(0.0, 100.0)) }.sortedBy { it.x }.toMutableStateList(),
     LineChartData.Line.PointsOrder.Ordered.X,
     greenTag,
-    LineChartData.Line.Customization(colors[greenTag.toInt()])
+    LineChartData.Line.Customization(colors[greenTag.toInt()], join = StrokeJoin.Round)
 )
 private val leftAxis = LineChartData.Axis.YAxis(
     lines = listOf(blueLine, yellowLine, greenLine),
@@ -65,7 +67,7 @@ private val redLine = LineChartData.Line(
     (0..17).map { LineChartData.Line.Point(it * 10.0, Random.nextDouble(0.0, 100.0)) }.toMutableStateList(),
     LineChartData.Line.PointsOrder.Unordered,
     redTag,
-    LineChartData.Line.Customization(colors[redTag.toInt()])
+    LineChartData.Line.Customization(colors[redTag.toInt()], join = StrokeJoin.Round)
 )
 private val rightAxis = LineChartData.Axis.YAxis(
     lines = listOf(redLine),
@@ -89,8 +91,8 @@ private val bottomAxis = LineChartData.Axis.XAxis(
 }
 
 private val lines = listOf(blueLine, yellowLine, greenLine, redLine)
-private val dragCallback = LineChartData.DragCallback(isInRangePx = { offset ->
-    abs(x - offset.x) <= 40 && abs(y - offset.y) <= 40
+private val pointDragCallback = LineChartData.PointDragCallback(isPointInRange = { point, press ->
+    (press - point).getDistance().dp <= 10.dp
 }, pointDragged = { lineTag, index, newPosition ->
     lines[lineTag.toInt()].points[index] = newPosition
 })
@@ -107,6 +109,7 @@ fun App() {
                 rightAxis = rightAxis,
                 bottomAxis = bottomAxis,
             ),
+            Zoom(0.3f, 3.5f),
             { canvasSize, lineTag, index, offset ->
                 drawCircle(
                     colors[lineTag.toInt()],
@@ -125,8 +128,7 @@ fun App() {
                     topLeft = topLeftOffset
                 )
             },
-            Zoom(3.5f),
-            dragCallback
+            pointDragCallback
         )
     }
 }
