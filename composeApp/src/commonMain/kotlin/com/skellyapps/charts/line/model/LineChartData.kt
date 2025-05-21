@@ -15,8 +15,12 @@ import androidx.compose.ui.graphics.drawscope.DrawScope.Companion.DefaultBlendMo
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastRoundToInt
 import kotlin.jvm.JvmInline
 import kotlin.math.abs
 
@@ -308,7 +312,66 @@ data class LineChartData(
         val max: Int
     )
 
-    class PointDragCallback(
+    class PointClick(
+        val isPointInRange: Density.(point: Offset, press: Offset) -> Boolean,
+        val viewPosition: Position,
+        val viewOffset: DpOffset,
+        val viewStayInChartBounds: Boolean,
+        val view: @Composable (lineTag: Byte, index: Int) -> Unit,
+    ) {
+        internal fun getViewOffset(density: Density, canvasWidth: Int, canvasHeight: Int, viewSize: IntSize, viewOffsetInCanvas: Offset): IntOffset {
+            val viewOffset = with(density) {
+                IntOffset(viewOffset.x.roundToPx(), viewOffset.y.roundToPx())
+            }
+            var x: Int
+            var y: Int
+            when (viewPosition) {
+                Position.TopLeft -> {
+                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width - viewOffset.x
+                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height - viewOffset.y
+                }
+                Position.Top -> {
+                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
+                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height - viewOffset.y
+                }
+                Position.TopRight -> {
+                    x = viewOffsetInCanvas.x.fastRoundToInt() + viewOffset.x
+                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height - viewOffset.y
+                }
+                Position.MiddleLeft -> {
+                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width - viewOffset.x
+                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
+                }
+                Position.Middle -> {
+                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
+                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
+                }
+                Position.MiddleRight -> {
+                    x = viewOffsetInCanvas.x.fastRoundToInt() + viewOffset.x
+                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
+                }
+                Position.BottomLeft -> {
+                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width - viewOffset.x
+                    y = viewOffsetInCanvas.y.fastRoundToInt() + viewOffset.y
+                }
+                Position.Bottom -> {
+                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
+                    y = viewOffsetInCanvas.y.fastRoundToInt() + viewOffset.y
+                }
+                Position.BottomRight -> {
+                    x = viewOffsetInCanvas.x.fastRoundToInt() + viewOffset.x
+                    y = viewOffsetInCanvas.y.fastRoundToInt() + viewOffset.y
+                }
+            }
+            if (viewStayInChartBounds) {
+                x = x.coerceIn(0, canvasWidth - viewSize.width)
+                y = y.coerceIn(0, canvasHeight - viewSize.height)
+            }
+            return IntOffset(x, y)
+        }
+    }
+
+    class PointDrag(
         val isPointInRange: Density.(point: Offset, press: Offset) -> Boolean,
         val pointDragged: (lineTag: Byte, index: Int, newPosition: Line.Point) -> Unit
     )

@@ -22,7 +22,6 @@ suspend fun PointerInputScope.detectTransformGestures(
         centroid: Offset,
         pan: Offset,
         zoom: Float,
-        mainPointer: PointerInputChange,
         type: PointerEventType,
         changes: List<PointerInputChange>
     ) -> Unit,
@@ -36,24 +35,18 @@ suspend fun PointerInputScope.detectTransformGestures(
                 firstChange.position,
                 pointerEvent.calculatePan(),
                 firstChange.scrollDelta.y,
-                firstChange,
                 pointerEvent.type,
                 pointerEvent.changes
             )
         } else if (pointerEvent.type == PointerEventType.Press) {
-            val firstChange = pointerEvent.changes.first()
             var zoom = 1f
             var pastTouchSlop = false
             val touchSlop = viewConfiguration.touchSlop
-            var pointer = firstChange
-            // Main pointer is the one that is down initially
-            var pointerId = firstChange.id
             do {
                 val event = awaitPointerEvent(pass = pass)
                 // If any position change is consumed from another PointerInputChange
                 // or pointer count requirement is not fulfilled
-                val canceled =
-                    event.changes.fastAny { it.isConsumed }
+                val canceled = event.changes.fastAny { it.isConsumed }
                 if (canceled) continue
                 if (event.type == PointerEventType.Scroll) {
                     val firstChange = event.changes.first()
@@ -61,22 +54,11 @@ suspend fun PointerInputScope.detectTransformGestures(
                         firstChange.position,
                         event.calculatePan(),
                         firstChange.scrollDelta.y,
-                        firstChange,
                         event.type,
                         event.changes
                     )
                     continue
                 }
-                // Get pointer that is down, if first pointer is up
-                // get another and use it if other pointers are also down
-                // event.changes.first() doesn't return same order
-                val pointerInputChange =
-                    event.changes.firstOrNull { it.id == pointerId }
-                        ?: event.changes.first()
-
-                // Next time will check same pointer with this id
-                pointerId = pointerInputChange.id
-                pointer = pointerInputChange
 
                 val zoomChange = event.calculateZoom()
                 val panChange = event.calculatePan()
@@ -99,7 +81,6 @@ suspend fun PointerInputScope.detectTransformGestures(
                             centroid,
                             panChange,
                             zoomChange,
-                            pointer,
                             pointerEvent.type,
                             event.changes
                         )

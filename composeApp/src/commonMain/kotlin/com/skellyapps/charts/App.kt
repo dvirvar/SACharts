@@ -1,14 +1,18 @@
 package com.skellyapps.charts
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.toMutableStateList
@@ -20,10 +24,12 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.line.LineChart
 import com.skellyapps.charts.line.model.LineChartData
+import com.skellyapps.charts.line.model.Position
 import com.skellyapps.charts.line.model.Zoom
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.max
@@ -81,7 +87,7 @@ private val rightAxis = LineChartData.Axis.YAxis(
 private val bottomAxis = LineChartData.Axis.XAxis(
     0.0,
     200.0,
-    LineChartData.Axis.Value.Step(40.0),
+    LineChartData.Axis.Value.Fixed(8),
     LineChartData.Axis.GridLines(false, false, LineChartData.Axis.DividerCustomization(color = Color.Gray, 1.dp)),
     LineChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -91,8 +97,27 @@ private val bottomAxis = LineChartData.Axis.XAxis(
 }
 
 private val lines = listOf(blueLine, yellowLine, greenLine, redLine)
-private val pointDragCallback = LineChartData.PointDragCallback(isPointInRange = { point, press ->
-    (press - point).getDistance().dp <= 10.dp
+
+private val pointClick = LineChartData.PointClick(
+    isPointInRange = { point, press ->
+        (press - point).getDistance() / this.density <= 15.0
+    },
+    viewPosition = Position.Bottom,
+    viewOffset = DpOffset(0.dp, 5.dp),
+    viewStayInChartBounds = true,
+    view = { lineTag, index ->
+        val lineIndex = lineTag.toInt()
+        val point = lines[lineIndex].points[index]
+        Column(Modifier.width(50.dp).background(colors[lineIndex].copy(.5f), AbsoluteRoundedCornerShape(25)), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(point.x.roundToDecimals(1).toString(), style = MaterialTheme.typography.bodySmall)
+            HorizontalDivider(thickness = 4.dp)
+            Text(point.y.roundToDecimals(1).toString(), style = MaterialTheme.typography.bodySmall)
+        }
+    }
+)
+
+private val pointDrag = LineChartData.PointDrag(isPointInRange = { point, press ->
+    (press - point).getDistance() / this.density <= 15.0
 }, pointDragged = { lineTag, index, newPosition ->
     lines[lineTag.toInt()].points[index] = newPosition
 })
@@ -128,7 +153,8 @@ fun App() {
                     topLeft = topLeftOffset
                 )
             },
-            pointDragCallback
+            pointClick,
+            pointDrag
         )
     }
 }
