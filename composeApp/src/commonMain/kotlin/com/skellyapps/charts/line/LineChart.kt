@@ -78,7 +78,7 @@ fun LineChart(
     var canvasSize by remember { mutableStateOf(IntSize(0,0)) }
     var canvasZoom by remember { mutableStateOf(1f) }
     var canvasOffset by remember { mutableStateOf(Offset.Zero) }
-    val minXValue by remember {
+    val minXValue by remember(data.bottomAxis?.minValue, data.leftAxis?.lines, data.rightAxis?.lines) {
         derivedStateOf {
             if (data.bottomAxis?.minValue != null) {
                 data.bottomAxis.minValue
@@ -95,7 +95,7 @@ fun LineChart(
             }
         }
     }
-    val maxXValue by remember {
+    val maxXValue by remember(data.bottomAxis?.maxValue, data.leftAxis?.lines, data.rightAxis?.lines) {
         derivedStateOf {
             if (data.bottomAxis?.maxValue != null) {
                 data.bottomAxis.maxValue
@@ -117,7 +117,7 @@ fun LineChart(
             }
         }
     }
-    val leftAxisMinYValue by remember {
+    val leftAxisMinYValue by remember(data.leftAxis?.minValue, data.leftAxis?.lines) {
         derivedStateOf {
             if (data.leftAxis?.minValue != null) {
                 data.leftAxis.minValue
@@ -126,7 +126,7 @@ fun LineChart(
             }
         }
     }
-    val leftAxisMaxYValue by remember {
+    val leftAxisMaxYValue by remember(data.leftAxis?.maxValue, data.leftAxis?.lines) {
         derivedStateOf {
             if (data.leftAxis?.maxValue != null) {
                 data.leftAxis.maxValue
@@ -140,7 +140,7 @@ fun LineChart(
             }
         }
     }
-    val rightAxisMinYValue by remember {
+    val rightAxisMinYValue by remember(data.rightAxis?.minValue, data.rightAxis?.lines) {
         derivedStateOf {
             if (data.rightAxis?.minValue != null) {
                 data.rightAxis.minValue
@@ -149,7 +149,7 @@ fun LineChart(
             }
         }
     }
-    val rightAxisMaxYValue by remember {
+    val rightAxisMaxYValue by remember(data.rightAxis?.maxValue, data.rightAxis?.lines) {
         derivedStateOf {
             if (data.rightAxis?.maxValue != null) {
                 data.rightAxis.maxValue
@@ -163,23 +163,23 @@ fun LineChart(
             }
         }
     }
-    val leftOffsetLines by remember {
+    val leftOffsetLines by remember(data.leftAxis?.lines, minXValue, maxXValue, data.xAxisLinesOffset, leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis?.yOffset) {
         derivedStateOf {
             data.leftAxis?.lines?.toOffsetLines(canvasSize, minXValue, maxXValue, data.xAxisLinesOffset, leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis.yOffset)
         }
     }
-    val rightOffsetLines by remember {
+    val rightOffsetLines by remember(data.rightAxis?.lines, minXValue, maxXValue, data.xAxisLinesOffset, rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis?.yOffset) {
         derivedStateOf {
             data.rightAxis?.lines?.toOffsetLines(canvasSize, minXValue, maxXValue, data.xAxisLinesOffset, rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis.yOffset)
         }
     }
-    val leftAxisValues by remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis) {
+    val leftAxisValues by remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis?.value) {
         mutableStateOf(data.leftAxis?.value?.getValues(leftAxisMinYValue, leftAxisMaxYValue) ?: listOf())
     }
-    val rightAxisValues by remember(rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis) {
+    val rightAxisValues by remember(rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis?.value) {
         mutableStateOf(data.rightAxis?.value?.getValues(rightAxisMinYValue, rightAxisMaxYValue) ?: listOf())
     }
-    val bottomAxisValues: List<Double> by remember(minXValue, maxXValue, data.bottomAxis) {
+    val bottomAxisValues: List<Double> by remember(minXValue, maxXValue, data.bottomAxis?.value) {
         mutableStateOf(data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf())
     }
     val clipToBounds by remember {
@@ -188,9 +188,9 @@ fun LineChart(
         }
     }
     var clickedPoint by remember { mutableStateOf<ClickedPoint?>(null) }
-    val clickedPointOffset by remember {
+    val clickedPointOffset by remember(data.xAxisLinesOffset, data.leftAxis?.yOffset, data.rightAxis?.yOffset, minXValue, maxXValue, leftAxisMinYValue, leftAxisMaxYValue, rightAxisMinYValue, rightAxisMaxYValue) {
         derivedStateOf {
-            clickedPoint?.let { p -> if (p.isLeftAxis) leftOffsetLines?.fastFirstOrNull { it.tag == p.lineTag }?.offsets[p.index] else rightOffsetLines?.fastFirstOrNull { it.tag == p.lineTag }?.offsets[p.index] }
+            clickedPoint?.let { p -> if (p.isLeftAxis) leftOffsetLines?.fastFirstOrNull { it.tag == p.lineTag }?.offsets?.getOrNull(p.index) else rightOffsetLines?.fastFirstOrNull { it.tag == p.lineTag }?.offsets?.getOrNull(p.index) }
         }
     }
     var draggedPoint by remember { mutableStateOf<DraggedPoint?>(null) }
@@ -212,7 +212,7 @@ fun LineChart(
                 },
                 Modifier
                     .`if`(clipToBounds, Modifier.clipToBounds())
-                    .`if`(zoom != null, Modifier.pointerInput(Unit) {
+                    .`if`(zoom != null, Modifier.pointerInput(zoom) {
                         detectTransformGestures(
                             onGesture = { centroid,
                                           pan,
@@ -234,7 +234,7 @@ fun LineChart(
                             }
                         )
                     })
-                    .`if`(pointClick != null, Modifier.pointerInput(Unit) {
+                    .`if`(pointClick != null, Modifier.pointerInput(data.xAxisLinesOffset, data.leftAxis?.yOffset, data.rightAxis?.yOffset, minXValue, maxXValue, leftAxisMinYValue, leftAxisMaxYValue, rightAxisMinYValue, rightAxisMaxYValue) {
                         detectTapGestures(
                             onTap = { offset ->
                                 val offset = offset / canvasZoom + canvasOffset
@@ -272,7 +272,7 @@ fun LineChart(
                             }
                         )
                     })
-                    .pointerInput(Unit) {
+                    .pointerInput(data.xAxisLinesOffset, data.leftAxis?.yOffset, data.leftAxis?.minValue, data.leftAxis?.maxValue,data.rightAxis?.yOffset, data.rightAxis?.minValue, data.rightAxis?.maxValue, data.bottomAxis?.minValue, data.bottomAxis?.maxValue) {
                         detectDragGestures(onDragStart = { offset ->
                             if (pointDrag == null) {
                                 return@detectDragGestures
@@ -330,7 +330,7 @@ fun LineChart(
                             }
                         }
                     }
-                    .`if`(pointDragAfterLongPress != null, Modifier.pointerInput(Unit) {
+                    .`if`(pointDragAfterLongPress != null, Modifier.pointerInput(data.xAxisLinesOffset, data.leftAxis?.minValue, data.leftAxis?.maxValue, data.rightAxis?.minValue, data.rightAxis?.maxValue, data.bottomAxis?.minValue, data.bottomAxis?.maxValue) {
                         detectDragGesturesAfterLongPress(onDragStart = { offset ->
                             val offset = offset / canvasZoom + canvasOffset
                             var minDistance = -1f
