@@ -1,5 +1,6 @@
 package com.skellyapps.charts.line.extension
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastMap
 import com.skellyapps.charts.line.model.LineChartData
@@ -49,8 +50,8 @@ internal inline fun LineChartData.Line.getMaxY(): Double? {
 }
 
 internal inline fun LineChartData.Line.toOffsetLine(
-    canvasSize: IntSize, minXValue: Double, maxXValue: Double, xOffset: LineChartData.AxisOffset,
-    minYValue: Double, maxYValue: Double, yOffset: LineChartData.AxisOffset
+    canvasSize: IntSize, minXValue: Double, maxXValue: Double, xOffset: Offset,
+    minYValue: Double, maxYValue: Double, yOffset: Offset
 ) =
     LineChartData.OffsetLine(
         points.toCanvasOffsets(canvasSize, minXValue, maxXValue, xOffset, minYValue, maxYValue, yOffset),
@@ -61,6 +62,6 @@ internal inline fun LineChartData.Line.toOffsetLine(
     )
 
 internal inline fun List<LineChartData.Line>.toOffsetLines(
-    canvasSize: IntSize, minXValue: Double, maxXValue: Double, xOffset: LineChartData.AxisOffset,
-    minYValue: Double, maxYValue: Double, yOffset: LineChartData.AxisOffset
+    canvasSize: IntSize, minXValue: Double, maxXValue: Double, xOffset: Offset,
+    minYValue: Double, maxYValue: Double, yOffset: Offset
 ) = fastMap { it.toOffsetLine(canvasSize, minXValue, maxXValue, xOffset, minYValue, maxYValue, yOffset) }

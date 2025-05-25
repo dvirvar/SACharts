@@ -28,7 +28,7 @@ data class LineChartData(
     val leftAxis: Axis.YAxis? = null,
     val rightAxis: Axis.YAxis? = null,
     val bottomAxis: Axis.XAxis? = null,
-    val xAxisLinesOffset: AxisOffset = AxisOffset(0, 0)
+    val xAxisOffset: DpOffset = DpOffset.Zero
 ) {
     data class Line(
         val points: MutableList<Point>,
@@ -219,7 +219,7 @@ data class LineChartData(
         ): Axis
 
         data class YAxis(
-            val yOffset: AxisOffset = AxisOffset(0, 0),
+            val yOffset: DpOffset = DpOffset.Zero,
             val lines: List<Line>,
             override val minValue: Double? = null,
             override val maxValue: Double? = null,
@@ -306,11 +306,6 @@ data class LineChartData(
             ): this(SolidColor(color), thickness, cap, pathEffect, alpha, colorFilter, blendMode)
         }
     }
-
-    data class AxisOffset(
-        val min: Int,
-        val max: Int
-    )
 
     class PointClick(
         val isPointInRange: Density.(point: Offset, press: Offset) -> Boolean,
