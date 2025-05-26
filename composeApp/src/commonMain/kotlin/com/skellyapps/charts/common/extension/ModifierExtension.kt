@@ -1,8 +1,8 @@
-package com.skellyapps.charts.line.extension
+package com.skellyapps.charts.common.extension
 
 import androidx.compose.ui.Modifier
 
-fun Modifier.`if`(condition: Boolean, then: Modifier): Modifier {
+internal fun Modifier.`if`(condition: Boolean, then: Modifier): Modifier {
     return if (condition) {
         this then then
     } else {

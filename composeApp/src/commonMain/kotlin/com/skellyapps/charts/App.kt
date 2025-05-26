@@ -33,9 +33,11 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.line.LineChart
+import com.skellyapps.charts.common.model.ChartValue
+import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.line.model.LineChartData
-import com.skellyapps.charts.line.model.Position
-import com.skellyapps.charts.line.model.Zoom
+import com.skellyapps.charts.common.model.Position
+import com.skellyapps.charts.common.model.Zoom
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.max
 import kotlin.math.pow
@@ -47,19 +49,19 @@ private const val greenTag = 2.toByte()
 private const val redTag = 3.toByte()
 private val colors = listOf(Color.Blue, Color.Yellow, Color.Green, Color.Red)
 private val blueLine = LineChartData.Line(
-    (1..12).map { LineChartData.Line.Point(it * Random.nextInt(5, 15).toDouble(), Random.nextDouble(0.0, 300.0)) }.sortedBy { it.x }.toMutableStateList(),
+    (1..12).map { ChartValue(it * Random.nextInt(5, 15).toDouble(), Random.nextDouble(0.0, 300.0)) }.sortedBy { it.x.value }.toMutableStateList(),
     LineChartData.Line.PointsOrder.Ordered.X,
     blueTag,
     LineChartData.Line.Customization(colors[blueTag.toInt()], join = StrokeJoin.Round)
 )
 private val yellowLine = LineChartData.Line(
-    (1..8).map { LineChartData.Line.Point(it * Random.nextInt(5, 15).toDouble(), Random.nextDouble(0.0, 100.0)) }.sortedBy { it.x }.toMutableStateList(),
+    (1..8).map { ChartValue(it * Random.nextInt(5, 15).toDouble(), Random.nextDouble(0.0, 100.0)) }.sortedBy { it.x.value }.toMutableStateList(),
     LineChartData.Line.PointsOrder.Ordered.X,
     yellowTag,
     LineChartData.Line.Customization(colors[yellowTag.toInt()], join = StrokeJoin.Round)
 )
 private val greenLine = LineChartData.Line(
-    (1..5).map { LineChartData.Line.Point(it * Random.nextInt(5, 20).toDouble(), Random.nextDouble(0.0, 100.0)) }.sortedBy { it.x }.toMutableStateList(),
+    (1..5).map { ChartValue(it * Random.nextInt(5, 20).toDouble(), Random.nextDouble(0.0, 100.0)) }.sortedBy { it.x.value }.toMutableStateList(),
     LineChartData.Line.PointsOrder.Ordered.X,
     greenTag,
     LineChartData.Line.Customization(colors[greenTag.toInt()], join = StrokeJoin.Round)
@@ -75,7 +77,7 @@ private val leftAxis = LineChartData.Axis.YAxis(
     }
 }
 private val redLine = LineChartData.Line(
-    (0..17).map { LineChartData.Line.Point(it * 10.0, Random.nextDouble(0.0, 100.0)) }.toMutableStateList(),
+    (0..17).map { ChartValue(it * 10.0, Random.nextDouble(0.0, 100.0)) }.toMutableStateList(),
     LineChartData.Line.PointsOrder.Unordered,
     redTag,
     LineChartData.Line.Customization(colors[redTag.toInt()], join = StrokeJoin.Round)
@@ -192,4 +194,9 @@ fun App() {
 private fun Double.roundToDecimals(decimals: Int): Double {
     val divider = 10.0.pow(decimals)
     return (this * divider).fastRoundToInt() / divider
+}
+
+private fun ChartValueCoordinate.roundToDecimals(decimals: Int): Double {
+    val divider = 10.0.pow(decimals)
+    return (value * divider).fastRoundToInt() / divider
 }

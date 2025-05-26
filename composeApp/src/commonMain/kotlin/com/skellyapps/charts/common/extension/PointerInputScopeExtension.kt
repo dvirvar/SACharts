@@ -1,4 +1,4 @@
-package com.skellyapps.charts.line.extension
+package com.skellyapps.charts.common.extension
 
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.calculateCentroid

@@ -1,4 +1,4 @@
-package com.skellyapps.charts.line.model
+package com.skellyapps.charts.common.model
 
 /**
  * Zoom settings

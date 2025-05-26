@@ -3,9 +3,11 @@ package com.skellyapps.charts.line.extension
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastMap
+import com.skellyapps.charts.common.extension.toChartPixels
+import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.line.model.LineChartData
 
-internal inline fun LineChartData.Line.getMinX(): Double? {
+internal inline fun LineChartData.Line.getMinX(): ChartValueCoordinate? {
     if (points.isEmpty()) {
         return null
     }
@@ -16,7 +18,7 @@ internal inline fun LineChartData.Line.getMinX(): Double? {
     }
 }
 
-internal inline fun LineChartData.Line.getMaxX(): Double? {
+internal inline fun LineChartData.Line.getMaxX(): ChartValueCoordinate? {
     if (points.isEmpty()) {
         return null
     }
@@ -27,7 +29,7 @@ internal inline fun LineChartData.Line.getMaxX(): Double? {
     }
 }
 
-internal inline fun LineChartData.Line.getMinY(): Double? {
+internal inline fun LineChartData.Line.getMinY(): ChartValueCoordinate? {
     if (points.isEmpty()) {
         return null
     }
@@ -38,7 +40,7 @@ internal inline fun LineChartData.Line.getMinY(): Double? {
     }
 }
 
-internal inline fun LineChartData.Line.getMaxY(): Double? {
+internal inline fun LineChartData.Line.getMaxY(): ChartValueCoordinate? {
     if (points.isEmpty()) {
         return null
     }
@@ -50,11 +52,12 @@ internal inline fun LineChartData.Line.getMaxY(): Double? {
 }
 
 internal inline fun LineChartData.Line.toOffsetLine(
-    canvasSize: IntSize, minXValue: Double, maxXValue: Double, xOffset: Offset,
-    minYValue: Double, maxYValue: Double, yOffset: Offset
+    canvasSize: IntSize, xOffset: Offset, yOffset: Offset,
+    minXValue: ChartValueCoordinate, maxXValue: ChartValueCoordinate,
+    minYValue: ChartValueCoordinate, maxYValue: ChartValueCoordinate,
 ) =
     LineChartData.OffsetLine(
-        points.toCanvasOffsets(canvasSize, minXValue, maxXValue, xOffset, minYValue, maxYValue, yOffset),
+        points.toChartPixels(canvasSize, xOffset, yOffset, minXValue, maxXValue, minYValue, maxYValue),
         pointsOrder,
         tag,
         customization,
@@ -62,6 +65,7 @@ internal inline fun LineChartData.Line.toOffsetLine(
     )
 
 internal inline fun List<LineChartData.Line>.toOffsetLines(
-    canvasSize: IntSize, minXValue: Double, maxXValue: Double, xOffset: Offset,
-    minYValue: Double, maxYValue: Double, yOffset: Offset
-) = fastMap { it.toOffsetLine(canvasSize, minXValue, maxXValue, xOffset, minYValue, maxYValue, yOffset) }
+    canvasSize: IntSize, xOffset: Offset, yOffset: Offset,
+    minXValue: ChartValueCoordinate, maxXValue: ChartValueCoordinate,
+    minYValue: ChartValueCoordinate, maxYValue: ChartValueCoordinate,
+) = fastMap { it.toOffsetLine(canvasSize, xOffset, yOffset, minXValue, maxXValue, minYValue, maxYValue) }

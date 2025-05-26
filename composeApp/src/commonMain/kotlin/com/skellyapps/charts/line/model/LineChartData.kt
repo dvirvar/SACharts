@@ -21,6 +21,10 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastRoundToInt
+import com.skellyapps.charts.common.model.ChartPixel
+import com.skellyapps.charts.common.model.ChartValue
+import com.skellyapps.charts.common.model.ChartValueCoordinate
+import com.skellyapps.charts.common.model.Position
 import kotlin.jvm.JvmInline
 import kotlin.math.abs
 
@@ -31,26 +35,23 @@ data class LineChartData(
     val xAxisOffset: DpOffset = DpOffset.Zero
 ) {
     data class Line(
-        val points: MutableList<Point>,
+        val points: MutableList<ChartValue>,
         val pointsOrder: PointsOrder,
         val tag: Byte,
         val customization: Customization,
         val fillCustomization: FillCustomization? = null,
     ) {
-        data class Point(
-            val x: Double,
-            val y: Double
-        )
-        sealed interface PointsOrder {
-            fun getClosestIndexDistance(offsets: List<Offset>, touchPoint: Offset, isInRange: (Offset, Offset) -> Boolean): Pair<Int, Float>?
-            data object Unordered: PointsOrder {
+        sealed class PointsOrder {
+            internal abstract fun getClosestIndexDistance(offsets: List<ChartPixel>, touchPoint: Offset, isInRange: (Offset, Offset) -> Boolean): Pair<Int, Float>?
+            data object Unordered: PointsOrder() {
                 override fun getClosestIndexDistance(
-                    offsets: List<Offset>,
+                    offsets: List<ChartPixel>,
                     touchPoint: Offset,
                     isInRange: (Offset, Offset) -> Boolean,
                 ): Pair<Int, Float>? {
                     var closestIndexDistance: Pair<Int, Float>? = null
                     offsets.fastForEachIndexed { index, offset ->
+                        val offset = offset.offset
                         if (isInRange(offset, touchPoint)) {
                             val distance = (offset - touchPoint).getDistanceSquared()
                             if (closestIndexDistance == null || closestIndexDistance.second > distance) {
@@ -62,10 +63,10 @@ data class LineChartData(
                 }
             }
 
-            sealed interface Ordered: PointsOrder {
-                fun getClosestByIndex(
+            sealed class Ordered: PointsOrder() {
+                internal fun getClosestByIndex(
                     index: Int,
-                    offsets: List<Offset>,
+                    offsets: List<ChartPixel>,
                     touchPoint: Offset,
                     isInRange: (Offset, Offset) -> Boolean,
                 ): Pair<Int, Float>? {
@@ -73,8 +74,8 @@ data class LineChartData(
                     if (index < 0) {
                         var absIndex = abs(index + 1)
                         if (absIndex < offsets.size) {
-                            if (isInRange(offsets[absIndex], touchPoint)) {
-                                val distance = (offsets[absIndex] - touchPoint).getDistanceSquared()
+                            if (isInRange(offsets[absIndex].offset, touchPoint)) {
+                                val distance = (offsets[absIndex].offset - touchPoint).getDistanceSquared()
                                 if (closestIndexDistance == null || closestIndexDistance.second > distance) {
                                     closestIndexDistance = Pair(absIndex, distance)
                                 }
@@ -82,8 +83,8 @@ data class LineChartData(
                         }
                         if (absIndex != 0) {
                             absIndex -= 1
-                            if (isInRange(offsets[absIndex], touchPoint)) {
-                                val distance = (offsets[absIndex] - touchPoint).getDistanceSquared()
+                            if (isInRange(offsets[absIndex].offset, touchPoint)) {
+                                val distance = (offsets[absIndex].offset - touchPoint).getDistanceSquared()
                                 if (closestIndexDistance == null || closestIndexDistance.second > distance) {
                                     closestIndexDistance = Pair(absIndex, distance)
                                 }
@@ -94,27 +95,27 @@ data class LineChartData(
                     }
                     return closestIndexDistance
                 }
-                data object X: Ordered {
+                data object X: Ordered() {
                     override fun getClosestIndexDistance(
-                        offsets: List<Offset>,
+                        offsets: List<ChartPixel>,
                         touchPoint: Offset,
-                        isInRange: Offset.(Offset) -> Boolean,
+                        isInRange: (Offset, Offset) -> Boolean,
                     ): Pair<Int, Float>? {
                         val index = offsets.binarySearchBy(touchPoint.x) {
-                            it.x
+                            it.x.value
                         }
                         return getClosestByIndex(index, offsets, touchPoint, isInRange)
                     }
                 }
 
-                data object Y: Ordered {
+                data object Y: Ordered() {
                     override fun getClosestIndexDistance(
-                        offsets: List<Offset>,
+                        offsets: List<ChartPixel>,
                         touchPoint: Offset,
-                        isInRange: Offset.(Offset) -> Boolean,
+                        isInRange: (Offset, Offset) -> Boolean,
                     ): Pair<Int, Float>? {
                         val index = offsets.binarySearchBy(touchPoint.y) {
-                            it.y
+                            it.y.value
                         }
                         return getClosestByIndex(index, offsets, touchPoint, isInRange)
                     }
@@ -194,7 +195,7 @@ data class LineChartData(
     }
 
     internal data class OffsetLine(
-        val offsets: List<Offset>,
+        val offsets: List<ChartPixel>,
         val pointsOrder: Line.PointsOrder,
         val tag: Byte,
         val customization: Line.Customization,
@@ -230,7 +231,7 @@ data class LineChartData(
         ): Axis
 
         sealed interface Value {
-            fun getValues(minValue: Double, maxValue: Double): List<Double>
+            fun getValues(minValue: ChartValueCoordinate, maxValue: ChartValueCoordinate): List<ChartValueCoordinate>
             @JvmInline
             value class Step(val step: Double): Value {
                 init {
@@ -238,12 +239,12 @@ data class LineChartData(
                         throw IllegalArgumentException("Step must be greater than 0")
                     }
                 }
-                override fun getValues(minValue: Double, maxValue: Double): List<Double> {
-                    val values = mutableListOf<Double>()
+                override fun getValues(minValue: ChartValueCoordinate, maxValue: ChartValueCoordinate): List<ChartValueCoordinate> {
+                    val values = mutableListOf<ChartValueCoordinate>()
                     var value = minValue
                     while (value <= maxValue) {
                         values.add(value)
-                        value += step
+                        value += ChartValueCoordinate(step)
                     }
                     return values
                 }
@@ -255,9 +256,9 @@ data class LineChartData(
                         throw IllegalArgumentException("Values must be greater than 0")
                     }
                 }
-                override fun getValues(minValue: Double, maxValue: Double) = when (values) {
+                override fun getValues(minValue: ChartValueCoordinate, maxValue: ChartValueCoordinate) = when (values) {
                     1 -> listOf(minValue)
-                    else -> (0..<values).map { minValue + (maxValue - minValue) * it / (values - 1).toDouble() }
+                    else -> (0..<values).map { ChartValueCoordinate(minValue.value + (maxValue - minValue).value * it / (values - 1).toDouble()) }
                 }
             }
         }
@@ -314,7 +315,7 @@ data class LineChartData(
         val viewStayInChartBounds: Boolean,
         val view: @Composable (lineTag: Byte, index: Int) -> Unit,
     ) {
-        internal fun getViewOffset(density: Density, canvasWidth: Int, canvasHeight: Int, viewSize: IntSize, viewOffsetInCanvas: Offset): IntOffset {
+        internal fun getViewOffset(density: Density, canvasWidth: Int, canvasHeight: Int, viewSize: IntSize, viewOffsetInCanvas: ChartPixel): IntOffset {
             val viewOffset = with(density) {
                 IntOffset(viewOffset.x.roundToPx(), viewOffset.y.roundToPx())
             }
@@ -322,40 +323,40 @@ data class LineChartData(
             var y: Int
             when (viewPosition) {
                 Position.TopLeft -> {
-                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width - viewOffset.x
-                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height - viewOffset.y
+                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width - viewOffset.x
+                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height - viewOffset.y
                 }
                 Position.Top -> {
-                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
-                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height - viewOffset.y
+                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
+                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height - viewOffset.y
                 }
                 Position.TopRight -> {
-                    x = viewOffsetInCanvas.x.fastRoundToInt() + viewOffset.x
-                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height - viewOffset.y
+                    x = viewOffsetInCanvas.x.value.fastRoundToInt() + viewOffset.x
+                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height - viewOffset.y
                 }
                 Position.MiddleLeft -> {
-                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width - viewOffset.x
-                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
+                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width - viewOffset.x
+                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
                 }
                 Position.Middle -> {
-                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
-                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
+                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
+                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
                 }
                 Position.MiddleRight -> {
-                    x = viewOffsetInCanvas.x.fastRoundToInt() + viewOffset.x
-                    y = viewOffsetInCanvas.y.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
+                    x = viewOffsetInCanvas.x.value.fastRoundToInt() + viewOffset.x
+                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
                 }
                 Position.BottomLeft -> {
-                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width - viewOffset.x
-                    y = viewOffsetInCanvas.y.fastRoundToInt() + viewOffset.y
+                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width - viewOffset.x
+                    y = viewOffsetInCanvas.y.value.fastRoundToInt() + viewOffset.y
                 }
                 Position.Bottom -> {
-                    x = viewOffsetInCanvas.x.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
-                    y = viewOffsetInCanvas.y.fastRoundToInt() + viewOffset.y
+                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
+                    y = viewOffsetInCanvas.y.value.fastRoundToInt() + viewOffset.y
                 }
                 Position.BottomRight -> {
-                    x = viewOffsetInCanvas.x.fastRoundToInt() + viewOffset.x
-                    y = viewOffsetInCanvas.y.fastRoundToInt() + viewOffset.y
+                    x = viewOffsetInCanvas.x.value.fastRoundToInt() + viewOffset.x
+                    y = viewOffsetInCanvas.y.value.fastRoundToInt() + viewOffset.y
                 }
             }
             if (viewStayInChartBounds) {
@@ -368,6 +369,6 @@ data class LineChartData(
 
     class PointDrag(
         val isPointInRange: Density.(point: Offset, press: Offset) -> Boolean,
-        val pointDragged: (lineTag: Byte, index: Int, newPosition: Line.Point) -> Unit
+        val pointDragged: (lineTag: Byte, index: Int, newPosition: ChartValue) -> Unit
     )
 }
