@@ -1,6 +1,7 @@
 package com.skellyapps.charts
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
@@ -32,12 +35,13 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
-import com.skellyapps.charts.line.LineChart
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.ChartValueCoordinate
-import com.skellyapps.charts.line.model.LineChartData
 import com.skellyapps.charts.common.model.Position
 import com.skellyapps.charts.common.model.Zoom
+import com.skellyapps.charts.line.model.LineChartData
+import com.skellyapps.charts.line.view.LineChart
+import com.skellyapps.charts.line.view.LineChart2
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.max
 import kotlin.math.pow
@@ -128,6 +132,33 @@ private val pointDrag = LineChartData.PointDrag(isPointInRange = { point, press 
 }, pointDragged = { lineTag, index, newPosition ->
     lines[lineTag.toInt()].points[index] = newPosition
 })
+private data class Action(val name: String, val action: (LineChartData) -> LineChartData)
+private val actions = listOf(
+    Action("L/R-axis-offset") {
+        it.copy(
+            leftAxis = it.leftAxis?.copy(
+                DpOffset(
+                    Random.nextInt(0, 10).dp,
+                    Random.nextInt(0, 10).dp
+                )
+            ),
+            rightAxis = it.rightAxis?.copy(
+                DpOffset(
+                    Random.nextInt(0, 30).dp,
+                    Random.nextInt(0, 30).dp
+                )
+            )
+        )
+    },
+    Action("X-axis-offset") {
+        it.copy(
+            xAxisOffset = DpOffset(
+                Random.nextInt(0, 30).dp,
+                Random.nextInt(0, 30).dp
+            )
+        )
+    },
+)
 
 @Composable
 @Preview
@@ -143,23 +174,14 @@ fun App() {
                 referentialEqualityPolicy()
             )
         }
-        var zoom by remember { mutableStateOf<Zoom?>(Zoom(0.3f, 3.5f)) }
+        var zoom by remember { mutableStateOf<Zoom?>(Zoom(0.5f, 5f)) }
         val textMeasurer = rememberTextMeasurer()
         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-            Row(Modifier.fillMaxWidth()) {
-                Button({
-                    chartData = chartData.copy(
-                        bottomAxis = bottomAxis.copy(value = LineChartData.Axis.Value.Fixed(Random.nextInt(1, 10)))
-                    )
-                }) {
-                    Text("ACTION")
-                }
-                Button({
-                    chartData = chartData.copy(
-                        rightAxis = rightAxis.copy(value = LineChartData.Axis.Value.Step(Random.nextInt(1, 20).toDouble())),
-                    )
-                }) {
-                    Text("ACTION2")
+            LazyRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                items(actions) {
+                    Button({chartData = it.action(chartData)}) {
+                        Text(it.name)
+                    }
                 }
             }
             LineChart(
@@ -170,6 +192,36 @@ fun App() {
                     drawCircle(
                         colors[lineTag.toInt()],
                         5.dp.toPx(),
+                        offset
+                    )
+                    val point = lines[lineTag.toInt()].points[index]
+                    val xValue = point.x.roundToDecimals(1)
+                    val yValue = point.y.roundToDecimals(1)
+                    val text = "$xValue|$yValue"
+                    val layout = textMeasurer.measure(text)
+                    val x = offset.x.coerceIn(layout.size.width / 2f, canvasSize.width - layout.size.width / 2) - layout.size.width / 2
+                    val topLeftOffset = Offset(x, max(offset.y - layout.size.height, 0f))
+                    drawText(
+                        layout,
+                        topLeft = topLeftOffset
+                    )
+                },
+                pointClick,
+                pointDrag
+            )
+            LineChart2(
+                Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp, bottom = 2.dp),
+                chartData,
+                zoom,
+                { canvasSize, lineTag, index, offset ->
+                    val radius = 5.dp.toPx()
+                    if (offset.x < -radius || offset.x > canvasSize.width + radius ||
+                        offset.y < -radius || offset.y > canvasSize.height + radius) {
+                        return@LineChart2
+                    }
+                    drawCircle(
+                        colors[lineTag.toInt()],
+                        radius,
                         offset
                     )
                     val point = lines[lineTag.toInt()].points[index]

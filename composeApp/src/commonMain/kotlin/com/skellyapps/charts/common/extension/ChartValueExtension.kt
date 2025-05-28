@@ -11,3 +11,9 @@ internal inline fun List<ChartValue>.toChartPixels(
     minXValue: ChartValueCoordinate, maxXValue: ChartValueCoordinate,
     minYValue: ChartValueCoordinate, maxYValue: ChartValueCoordinate
 ) = fastMap { it.toChartPixel(canvasSize, xOffset, yOffset, minXValue, maxXValue, minYValue, maxYValue) }
+
+internal inline fun List<ChartValue>.toChartPixels(
+    canvasSize: IntSize,
+    minXValue: ChartValueCoordinate, maxXValue: ChartValueCoordinate,
+    minYValue: ChartValueCoordinate, maxYValue: ChartValueCoordinate
+) = fastMap { it.toChartPixel(canvasSize, minXValue, maxXValue, minYValue, maxYValue) }

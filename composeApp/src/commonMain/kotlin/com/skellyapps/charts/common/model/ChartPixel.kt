@@ -27,6 +27,17 @@ internal value class ChartPixel(val offset: Offset) {
         x.toChartValueCoordinate(chartSize.width, xAxisOffset, minXValue, maxXValue, false),
         y.toChartValueCoordinate(chartSize.height, yAxisOffset, minYValue, maxYValue, true),
     )
+
+    internal fun toChartValue(
+        chartSize: IntSize,
+        minXValue: ChartValueCoordinate,
+        maxXValue: ChartValueCoordinate,
+        minYValue: ChartValueCoordinate,
+        maxYValue: ChartValueCoordinate
+    ) = ChartValue(
+        x.toChartValueCoordinate(chartSize.width, minXValue, maxXValue, false),
+        y.toChartValueCoordinate(chartSize.height, minYValue, maxYValue, true),
+    )
 }
 
 @Immutable
@@ -42,5 +53,16 @@ internal value class ChartPixelCoordinate(val value: Float) {
         ChartValueCoordinate(((chartSize - value - offset.x) / (chartSize - offset.x - offset.y)) * (maxCoordinate - minCoordinate).value + minCoordinate.value)
     } else {
         ChartValueCoordinate(((value - offset.x) / (chartSize - offset.x - offset.y)) * (maxCoordinate - minCoordinate).value + minCoordinate.value)
+    }
+
+    internal fun toChartValueCoordinate(
+        chartSize: Int,
+        minCoordinate: ChartValueCoordinate,
+        maxCoordinate: ChartValueCoordinate,
+        inverted: Boolean
+    ) = if (inverted) {
+        ChartValueCoordinate(((chartSize - value) / chartSize) * (maxCoordinate - minCoordinate).value + minCoordinate.value)
+    } else {
+        ChartValueCoordinate((value / chartSize) * (maxCoordinate - minCoordinate).value + minCoordinate.value)
     }
 }

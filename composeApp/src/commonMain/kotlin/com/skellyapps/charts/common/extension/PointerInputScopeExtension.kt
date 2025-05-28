@@ -1,5 +1,6 @@
 package com.skellyapps.charts.common.extension
 
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.calculateCentroid
 import androidx.compose.foundation.gestures.calculateCentroidSize
@@ -22,6 +23,7 @@ suspend fun PointerInputScope.detectTransformGestures(
         centroid: Offset,
         pan: Offset,
         zoom: Float,
+        orienation: Orientation?,
         type: PointerEventType,
         changes: List<PointerInputChange>
     ) -> Unit,
@@ -35,6 +37,7 @@ suspend fun PointerInputScope.detectTransformGestures(
                 firstChange.position,
                 pointerEvent.calculatePan(),
                 firstChange.scrollDelta.y,
+                null,
                 pointerEvent.type,
                 pointerEvent.changes
             )
@@ -54,6 +57,7 @@ suspend fun PointerInputScope.detectTransformGestures(
                         firstChange.position,
                         event.calculatePan(),
                         firstChange.scrollDelta.y,
+                        null,
                         event.type,
                         event.changes
                     )
@@ -67,7 +71,7 @@ suspend fun PointerInputScope.detectTransformGestures(
                     zoom *= zoomChange
 
                     val centroidSize = event.calculateCentroidSize(useCurrent = false)
-                    val zoomMotion = abs(1 - zoom) * centroidSize
+                    val zoomMotion = abs(1f - zoom) * centroidSize
 
                     if (zoomMotion > touchSlop) {
                         pastTouchSlop = true
@@ -75,12 +79,37 @@ suspend fun PointerInputScope.detectTransformGestures(
                 }
 
                 if (pastTouchSlop) {
-                    val centroid = event.calculateCentroid(useCurrent = false)
                     if (zoomChange != 1f) {
+                        val centroid = event.calculateCentroid(useCurrent = false)
+                        var totalHorizontalMovement = 0f
+                        var totalVerticalMovement = 0f
+                        event.changes.fastForEach { change ->
+                            val previousPosition = change.previousPosition
+                            val currentPosition = change.position
+
+                            val dx = currentPosition.x - previousPosition.x
+                            val dy = currentPosition.y - previousPosition.y
+
+                            totalHorizontalMovement += abs(dx)
+                            totalVerticalMovement += abs(dy)
+                        }
+                        val orientation = if (totalHorizontalMovement > totalVerticalMovement * 2f) { // e.g., 1.5f
+                            // Zoom is predominantly horizontal
+                            // You might want to pass this information in your onGesture or
+                            // have a separate callback for it.
+                            Orientation.Horizontal
+                        } else if (totalVerticalMovement > totalHorizontalMovement * 2f) {
+                            // Zoom is predominantly vertical
+                            Orientation.Vertical
+                        } else {
+                            // More or less equal, or too small to determine
+                             null
+                        }
                         onGesture(
                             centroid,
                             panChange,
                             zoomChange,
+                            orientation,
                             pointerEvent.type,
                             event.changes
                         )

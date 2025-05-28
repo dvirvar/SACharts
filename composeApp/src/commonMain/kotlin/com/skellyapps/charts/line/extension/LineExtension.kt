@@ -64,8 +64,27 @@ internal inline fun LineChartData.Line.toOffsetLine(
         fillCustomization
     )
 
+internal inline fun LineChartData.Line.toOffsetLine(
+    canvasSize: IntSize,
+    minXValue: ChartValueCoordinate, maxXValue: ChartValueCoordinate,
+    minYValue: ChartValueCoordinate, maxYValue: ChartValueCoordinate,
+) =
+    LineChartData.OffsetLine(
+        points.toChartPixels(canvasSize, minXValue, maxXValue, minYValue, maxYValue),
+        pointsOrder,
+        tag,
+        customization,
+        fillCustomization
+    )
+
 internal inline fun List<LineChartData.Line>.toOffsetLines(
     canvasSize: IntSize, xOffset: Offset, yOffset: Offset,
     minXValue: ChartValueCoordinate, maxXValue: ChartValueCoordinate,
     minYValue: ChartValueCoordinate, maxYValue: ChartValueCoordinate,
 ) = fastMap { it.toOffsetLine(canvasSize, xOffset, yOffset, minXValue, maxXValue, minYValue, maxYValue) }
+
+internal inline fun List<LineChartData.Line>.toOffsetLines(
+    canvasSize: IntSize,
+    minXValue: ChartValueCoordinate, maxXValue: ChartValueCoordinate,
+    minYValue: ChartValueCoordinate, maxYValue: ChartValueCoordinate,
+) = fastMap { it.toOffsetLine(canvasSize, minXValue, maxXValue, minYValue, maxYValue) }
