@@ -1,6 +1,5 @@
 package com.skellyapps.charts.line.view
 
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -23,9 +22,11 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -39,14 +40,11 @@ import androidx.compose.ui.zIndex
 import com.skellyapps.charts.common.extension.detectTransformGestures
 import com.skellyapps.charts.common.extension.`if`
 import com.skellyapps.charts.common.model.ChartPixel
-import com.skellyapps.charts.common.model.ChartPixelCoordinate
-import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.common.model.Zoom
 import com.skellyapps.charts.common.view.AxisColumn
 import com.skellyapps.charts.common.view.AxisRow
 import com.skellyapps.charts.common.view.GridChartCanvas
-import com.skellyapps.charts.common.view.dividersZIndex
 import com.skellyapps.charts.line.extension.getClosestIndexDistance
 import com.skellyapps.charts.line.extension.getMaxX
 import com.skellyapps.charts.line.extension.getMaxY
@@ -57,11 +55,8 @@ import com.skellyapps.charts.line.model.ClickedPoint
 import com.skellyapps.charts.line.model.DraggedPoint
 import com.skellyapps.charts.line.model.LineChartData
 
-internal const val linesZIndex = dividersZIndex + 10f
-internal const val axesZIndex = -1f
-
 @Composable
-fun LineChart(
+fun LineChartRealZoom(
     modifier: Modifier,
     data: LineChartData,
     zoom: Zoom? = null,
@@ -72,7 +67,7 @@ fun LineChart(
 ) {
     val density = LocalDensity.current
     var canvasSize by remember { mutableStateOf(IntSize(0,0)) }
-    var canvasZoom by remember { mutableStateOf(Offset(1f,1f)) }
+    var canvasZoom by remember { mutableStateOf(1f) }
     var canvasOffset by remember { mutableStateOf(Offset.Zero) }
     val leftAxisYOffset by remember(data.leftAxis?.offset) {
         derivedStateOf {
@@ -134,13 +129,6 @@ fun LineChart(
             }
         }
     }
-    val xAxisViewPort by remember(xAxisOffset, minXValue, maxXValue) {
-        derivedStateOf {
-            val x = ChartPixelCoordinate(canvasOffset.x).toChartValueCoordinate(canvasSize.width, xAxisOffset, minXValue, maxXValue, false)
-            val maxX = ChartPixelCoordinate(canvasOffset.x + canvasSize.width.toFloat() / canvasZoom.x).toChartValueCoordinate(canvasSize.width, xAxisOffset, minXValue, maxXValue, false)
-            ChartValue(x, maxX)
-        }
-    }
     val leftAxisMinYValue by remember(data.leftAxis?.minValue, data.leftAxis?.lines) {
         derivedStateOf {
             ChartValueCoordinate(
@@ -166,17 +154,6 @@ fun LineChart(
                     }
                 }
             )
-        }
-    }
-    val leftAxisYViewPort by remember(leftAxisYOffset, leftAxisMinYValue, leftAxisMaxYValue) {
-        derivedStateOf {
-            if (leftAxisYOffset == null) {
-                ChartValue(1.0, 1.0)
-            } else {
-                val y = ChartPixelCoordinate(canvasOffset.y + canvasSize.height.toFloat() / canvasZoom.y).toChartValueCoordinate(canvasSize.height, leftAxisYOffset!!, leftAxisMinYValue, leftAxisMaxYValue, true)
-                val maxY = ChartPixelCoordinate(canvasOffset.y).toChartValueCoordinate(canvasSize.height, leftAxisYOffset!!, leftAxisMinYValue, leftAxisMaxYValue, true)
-                ChartValue(y, maxY)
-            }
         }
     }
     val rightAxisMinYValue by remember(data.rightAxis?.minValue, data.rightAxis?.lines) {
@@ -206,58 +183,42 @@ fun LineChart(
             )
         }
     }
-    val rightAxisYViewPort by remember(rightAxisYOffset, rightAxisMinYValue, rightAxisMaxYValue) {
+    val leftOffsetLines by remember(data.leftAxis?.lines, xAxisOffset, leftAxisYOffset, minXValue, maxXValue, leftAxisMinYValue, leftAxisMaxYValue) {
         derivedStateOf {
-            if (rightAxisYOffset == null) {
-                ChartValue(1.0, 1.0)
-            } else {
-                val y = ChartPixelCoordinate(canvasOffset.y + canvasSize.height.toFloat() / canvasZoom.y).toChartValueCoordinate(canvasSize.height, rightAxisYOffset!!, rightAxisMinYValue, rightAxisMaxYValue, true)
-                val maxY = ChartPixelCoordinate(canvasOffset.y).toChartValueCoordinate(canvasSize.height, rightAxisYOffset!!, rightAxisMinYValue, rightAxisMaxYValue, true)
-                ChartValue(y, maxY)
-            }
+            data.leftAxis?.lines?.toOffsetLines(canvasSize, xAxisOffset, leftAxisYOffset!!, minXValue, maxXValue, leftAxisMinYValue, leftAxisMaxYValue)
         }
     }
-    val leftOffsetLines by remember(data.leftAxis?.lines, xAxisViewPort, leftAxisYViewPort) {
+    val rightOffsetLines by remember(data.rightAxis?.lines, xAxisOffset, rightAxisYOffset, minXValue, maxXValue, rightAxisMinYValue, rightAxisMaxYValue) {
         derivedStateOf {
-            data.leftAxis?.lines?.toOffsetLines(canvasSize, xAxisViewPort.x, xAxisViewPort.y, leftAxisYViewPort.x, leftAxisYViewPort.y)
-        }
-    }
-    val rightOffsetLines by remember(data.rightAxis?.lines, xAxisViewPort, rightAxisYViewPort) {
-        derivedStateOf {
-            data.rightAxis?.lines?.toOffsetLines(canvasSize, xAxisViewPort.x, xAxisViewPort.y, rightAxisYViewPort.x, rightAxisYViewPort.y)
+            data.rightAxis?.lines?.toOffsetLines(canvasSize, xAxisOffset, rightAxisYOffset!!, minXValue, maxXValue, rightAxisMinYValue, rightAxisMaxYValue)
         }
     }
     val leftAxisValues by remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis?.value) {
-        derivedStateOf {
-            data.leftAxis?.value?.getValues(leftAxisMinYValue, leftAxisMaxYValue) ?: listOf()
-        }
+        mutableStateOf(data.leftAxis?.value?.getValues(leftAxisMinYValue, leftAxisMaxYValue) ?: listOf())
     }
     val rightAxisValues by remember(rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis?.value) {
-        derivedStateOf {
-            data.rightAxis?.value?.getValues(rightAxisMinYValue, rightAxisMaxYValue) ?: listOf()
-        }
+        mutableStateOf(data.rightAxis?.value?.getValues(rightAxisMinYValue, rightAxisMaxYValue) ?: listOf())
     }
     val bottomAxisValues: List<ChartValueCoordinate> by remember(minXValue, maxXValue, data.bottomAxis?.value) {
-        derivedStateOf {
-            data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf()
-        }
+        mutableStateOf(data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf())
     }
     val clipToBounds by remember {
         derivedStateOf {
-            canvasZoom.x != 1f || canvasZoom.y != 1f
+            canvasZoom != 1f
         }
     }
     var clickedPoint by remember { mutableStateOf<ClickedPoint?>(null) }
-    val clickedPointOffset by remember(xAxisViewPort, leftAxisYViewPort, rightAxisYViewPort) {
+    val clickedPointOffset by remember(data.xAxisOffset, data.leftAxis?.offset, data.rightAxis?.offset, minXValue, maxXValue, leftAxisMinYValue, leftAxisMaxYValue, rightAxisMinYValue, rightAxisMaxYValue) {
         derivedStateOf {
             clickedPoint?.let { p -> if (p.isLeftAxis) leftOffsetLines?.fastFirstOrNull { it.tag == p.lineTag }?.offsets?.getOrNull(p.index) else rightOffsetLines?.fastFirstOrNull { it.tag == p.lineTag }?.offsets?.getOrNull(p.index) }
         }
     }
     var draggedPoint by remember { mutableStateOf<DraggedPoint?>(null) }
+
     Row(modifier) {
         data.leftAxis?.let { axis ->
             axis.valueView?.let {
-                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), true, leftAxisValues, leftAxisYViewPort.x, leftAxisYViewPort.y) {
+                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), canvasZoom, canvasOffset.y, leftAxisYOffset!!, true, leftAxisValues, leftAxisMinYValue, leftAxisMaxYValue) {
                     leftAxisValues.fastForEach { value ->
                         it(value.value)
                     }
@@ -272,12 +233,15 @@ fun LineChart(
                 data.leftAxis,
                 data.rightAxis,
                 data.bottomAxis,
-                leftAxisYViewPort.x,
-                leftAxisYViewPort.y,
-                rightAxisYViewPort.x,
-                rightAxisYViewPort.y,
-                xAxisViewPort.x,
-                xAxisViewPort.y,
+                xAxisOffset,
+                canvasZoom,
+                canvasOffset,
+                leftAxisMinYValue,
+                leftAxisMaxYValue,
+                rightAxisMinYValue,
+                rightAxisMaxYValue,
+                minXValue,
+                maxXValue,
                 leftAxisValues,
                 rightAxisValues,
                 bottomAxisValues,
@@ -292,36 +256,28 @@ fun LineChart(
                             onGesture = { centroid,
                                           pan,
                                           gestureZoom,
-                                          orientation,
+                                          _,
                                           type,
                                           changes ->
                                 if (type == PointerEventType.Scroll || changes.size > 1) {
                                     val newScale = if (type == PointerEventType.Scroll) {
-                                        val addition = if (gestureZoom < 0f) zoom!!.scrollJump else -zoom!!.scrollJump
-                                        Offset((canvasZoom.x + addition).coerceIn(1f, zoom.max), (canvasZoom.y + addition).coerceIn(1f, zoom.max))
+                                        val addition = if (gestureZoom < 0) zoom!!.scrollJump else -zoom!!.scrollJump
+                                        (canvasZoom + addition).coerceIn(1f, zoom.max)
                                     } else {
-                                        var x = canvasZoom.x
-                                        if (orientation != Orientation.Vertical) {
-                                            x = (x * gestureZoom).coerceIn(1f, zoom!!.max)
-                                        }
-                                        var y = canvasZoom.y
-                                        if (orientation != Orientation.Horizontal) {
-                                            y = (y * gestureZoom).coerceIn(1f, zoom!!.max)
-                                        }
-                                        Offset(x, y)
+                                        (canvasZoom * gestureZoom).coerceIn(1f, zoom!!.max)
                                     }
-                                    val newX = ((canvasOffset.x + centroid.x / canvasZoom.x) - (centroid.x / newScale.x + pan.x / canvasZoom.x)).coerceIn(0f, size.width - size.width / newScale.x)
-                                    val newY = ((canvasOffset.y + centroid.y / canvasZoom.y) - (centroid.y / newScale.y + pan.y / canvasZoom.y)).coerceIn(0f, size.height - size.height / newScale.y)
-                                    canvasOffset = Offset(newX, newY)
+                                    val newOffset = (canvasOffset + centroid / canvasZoom) - (centroid / newScale + pan / canvasZoom)
+                                    canvasOffset = newOffset.copy(newOffset.x.coerceIn(0f, size.width - size.width / newScale), newOffset.y.coerceIn(0f, size.height - size.height / newScale))
                                     canvasZoom = newScale
                                     changes.forEach { it.consume() }
                                 }
                             }
                         )
                     })
-                    .`if`(pointClick != null, Modifier.pointerInput(xAxisViewPort, leftAxisYViewPort, rightAxisYViewPort) {
+                    .`if`(pointClick != null, Modifier.pointerInput(data.xAxisOffset, data.leftAxis?.offset, data.rightAxis?.offset, minXValue, maxXValue, leftAxisMinYValue, leftAxisMaxYValue, rightAxisMinYValue, rightAxisMaxYValue) {
                         detectTapGestures(
                             onTap = { offset ->
+                                val offset = offset / canvasZoom + canvasOffset
                                 var minDistance = -1f
                                 var minDistanceClickedPoint: ClickedPoint? = null
                                 leftOffsetLines?.fastForEach { line ->
@@ -361,6 +317,7 @@ fun LineChart(
                             if (pointDrag == null) {
                                 return@detectDragGestures
                             }
+                            val offset = offset / canvasZoom + canvasOffset
                             var minDistance = -1f
                             var minDistanceDraggedPoint: DraggedPoint? = null
                             leftOffsetLines?.fastForEach { line ->
@@ -394,24 +351,27 @@ fun LineChart(
                             draggedPoint = minDistanceDraggedPoint
                         }, onDragEnd = {draggedPoint = null}, onDragCancel = {draggedPoint = null}) { change, offset ->
                             if (pointDrag != null && draggedPoint != null) {
-                                val position = change.position
+                                val position = change.position / canvasZoom + canvasOffset
                                 val point = ChartPixel(position).toChartValue(
                                     size,
-                                    xAxisViewPort.x,
-                                    xAxisViewPort.y,
-                                    if (draggedPoint!!.isLeftAxis) leftAxisYViewPort.x else rightAxisYViewPort.x,
-                                    if (draggedPoint!!.isLeftAxis) leftAxisYViewPort.y else rightAxisYViewPort.y
+                                    xAxisOffset,
+                                    if (draggedPoint!!.isLeftAxis) leftAxisYOffset!! else rightAxisYOffset!!,
+                                    minXValue,
+                                    maxXValue,
+                                    if (draggedPoint!!.isLeftAxis) leftAxisMinYValue else rightAxisMinYValue,
+                                    if (draggedPoint!!.isLeftAxis) leftAxisMaxYValue else rightAxisMaxYValue
                                 )
                                 pointDrag.pointDragged(draggedPoint!!.lineTag, draggedPoint!!.index, point)
                             } else {
-                                canvasOffset = canvasZoom.run {
-                                    Offset((canvasOffset - offset / x).x.coerceIn(0f, size.width - size.width / canvasZoom.x), (canvasOffset - offset / y).y.coerceIn(0f, size.height - size.height / canvasZoom.y))
+                                canvasOffset = (canvasOffset - offset / canvasZoom).run {
+                                    Offset(x.coerceIn(0f, size.width - size.width / canvasZoom), y.coerceIn(0f, size.height - size.height / canvasZoom))
                                 }
                             }
                         }
                     }
                     .`if`(pointDragAfterLongPress != null, Modifier.pointerInput(data.xAxisOffset, data.leftAxis?.minValue, data.leftAxis?.maxValue, data.rightAxis?.minValue, data.rightAxis?.maxValue, data.bottomAxis?.minValue, data.bottomAxis?.maxValue) {
                         detectDragGesturesAfterLongPress(onDragStart = { offset ->
+                            val offset = offset / canvasZoom + canvasOffset
                             var minDistance = -1f
                             var minDistanceDraggedPoint: DraggedPoint? = null
                             leftOffsetLines?.fastForEach { line ->
@@ -445,19 +405,27 @@ fun LineChart(
                             draggedPoint = minDistanceDraggedPoint
                         }, onDragEnd = {draggedPoint = null}, onDragCancel = {draggedPoint = null}) { change, offset ->
                             if (draggedPoint != null) {
-                                val position = change.position
+                                val position = change.position / canvasZoom + canvasOffset
                                 val point = ChartPixel(position).toChartValue(
                                     size,
-                                    xAxisViewPort.x,
-                                    xAxisViewPort.y,
-                                    if (draggedPoint!!.isLeftAxis) leftAxisYViewPort.x else rightAxisYViewPort.x,
-                                    if (draggedPoint!!.isLeftAxis) leftAxisYViewPort.y else rightAxisYViewPort.y
+                                    xAxisOffset,
+                                    if (draggedPoint!!.isLeftAxis) leftAxisYOffset!! else rightAxisYOffset!!,
+                                    minXValue,
+                                    maxXValue,
+                                    if (draggedPoint!!.isLeftAxis) leftAxisMinYValue else rightAxisMinYValue,
+                                    if (draggedPoint!!.isLeftAxis) leftAxisMaxYValue else rightAxisMaxYValue
                                 )
                                 pointDragAfterLongPress!!.pointDragged(draggedPoint!!.lineTag, draggedPoint!!.index, point)
                             }
                         }
                     })
-                    .drawWithContent {
+                    .graphicsLayer {
+                        translationX = -canvasOffset.x * canvasZoom
+                        translationY = -canvasOffset.y * canvasZoom
+                        scaleX = canvasZoom
+                        scaleY = canvasZoom
+                        transformOrigin = TransformOrigin(0f, 0f)
+                    }.drawWithContent {
                         leftOffsetLines?.fastForEach { line ->
                             val path = Path().apply {
                                 line.offsets.fastForEachIndexed { index, chartPixel ->
@@ -552,7 +520,7 @@ fun LineChart(
             }
             data.bottomAxis?.let { axis ->
                 axis.valueView?.let {
-                    AxisRow(Modifier.fillMaxWidth().zIndex(axesZIndex), bottomAxisValues, xAxisViewPort.x, xAxisViewPort.y) {
+                    AxisRow(Modifier.fillMaxWidth().zIndex(axesZIndex), canvasZoom, canvasOffset.x, xAxisOffset, bottomAxisValues, minXValue, maxXValue) {
                         bottomAxisValues.fastForEach { value ->
                             it(value.value)
                         }
@@ -562,9 +530,7 @@ fun LineChart(
         }
         data.rightAxis?.let { axis ->
             axis.valueView?.let {
-                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(
-                    axesZIndex
-                ), false, rightAxisValues, rightAxisYViewPort.x, rightAxisYViewPort.y) {
+                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), canvasZoom, canvasOffset.y, rightAxisYOffset!!, false, rightAxisValues, rightAxisMinYValue, rightAxisMaxYValue) {
                     rightAxisValues.fastForEach { value ->
                         it(value.value)
                     }

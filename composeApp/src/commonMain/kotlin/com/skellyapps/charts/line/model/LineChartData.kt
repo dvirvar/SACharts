@@ -23,15 +23,17 @@ import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.common.model.ChartPixel
 import com.skellyapps.charts.common.model.ChartValue
-import com.skellyapps.charts.common.model.ChartValueCoordinate
+import com.skellyapps.charts.common.model.GridChartData
+import com.skellyapps.charts.common.model.GridChartData.Axis.DividerCustomization
+import com.skellyapps.charts.common.model.GridChartData.Axis.GridLines
+import com.skellyapps.charts.common.model.GridChartData.Axis.Value
 import com.skellyapps.charts.common.model.Position
-import kotlin.jvm.JvmInline
 import kotlin.math.abs
 
 data class LineChartData(
-    val leftAxis: Axis.YAxis? = null,
-    val rightAxis: Axis.YAxis? = null,
-    val bottomAxis: Axis.XAxis? = null,
+    val leftAxis: YAxis? = null,
+    val rightAxis: YAxis? = null,
+    val bottomAxis: GridChartData.Axis.XAxis? = null,
     val xAxisOffset: DpOffset = DpOffset.Zero
 ) {
     data class Line(
@@ -202,111 +204,16 @@ data class LineChartData(
         val fillCustomization: Line.FillCustomization?
     )
 
-    sealed interface Axis {
-        val minValue: Double?
-        val maxValue: Double?
-        val value: Value
-        val gridLines: GridLines?
-        val dividerCustomization: DividerCustomization?
-        val valueView: @Composable ((value: Double) -> Unit)?
-
-        data class XAxis(
-            override val minValue: Double? = null,
-            override val maxValue: Double? = null,
-            override val value: Value,
-            override val gridLines: GridLines? = null,
-            override val dividerCustomization: DividerCustomization? = null,
-            override val valueView: @Composable ((value: Double) -> Unit)? = null
-        ): Axis
-
-        data class YAxis(
-            val yOffset: DpOffset = DpOffset.Zero,
-            val lines: List<Line>,
-            override val minValue: Double? = null,
-            override val maxValue: Double? = null,
-            override val value: Value,
-            override val gridLines: GridLines? = null,
-            override val dividerCustomization: DividerCustomization? = null,
-            override val valueView: @Composable ((value: Double) -> Unit)? = null,
-        ): Axis
-
-        sealed interface Value {
-            fun getValues(minValue: ChartValueCoordinate, maxValue: ChartValueCoordinate): List<ChartValueCoordinate>
-            @JvmInline
-            value class Step(val step: Double): Value {
-                init {
-                    if (step <= 0) {
-                        throw IllegalArgumentException("Step must be greater than 0")
-                    }
-                }
-                override fun getValues(minValue: ChartValueCoordinate, maxValue: ChartValueCoordinate): List<ChartValueCoordinate> {
-                    val values = mutableListOf<ChartValueCoordinate>()
-                    var value = minValue
-                    while (value <= maxValue) {
-                        values.add(value)
-                        value += ChartValueCoordinate(step)
-                    }
-                    return values
-                }
-            }
-            @JvmInline
-            value class Fixed(val values: Int): Value {
-                init {
-                    if (values < 1) {
-                        throw IllegalArgumentException("Values must be greater than 0")
-                    }
-                }
-                override fun getValues(minValue: ChartValueCoordinate, maxValue: ChartValueCoordinate) = when (values) {
-                    1 -> listOf(minValue)
-                    else -> (0..<values).map { ChartValueCoordinate(minValue.value + (maxValue - minValue).value * it / (values - 1).toDouble()) }
-                }
-            }
-        }
-
-        data class GridLines(
-            val showFirstLine: Boolean = true,
-            val showLastLine: Boolean = true,
-            val customization: DividerCustomization
-        )
-
-        class DividerCustomization {
-            val brush: Brush
-            val thickness: Dp
-            val cap: StrokeCap
-            val pathEffect: PathEffect?
-            @FloatRange val alpha: Float
-            val colorFilter: ColorFilter?
-            val blendMode: BlendMode
-
-            constructor(
-                brush: Brush,
-                thickness: Dp = 2.dp,
-                cap: StrokeCap = Stroke.DefaultCap,
-                pathEffect: PathEffect? = null,
-                @FloatRange alpha: Float = 1f,
-                colorFilter: ColorFilter? = null,
-                blendMode: BlendMode = DefaultBlendMode,
-            ) {
-                this.brush = brush
-                this.thickness = thickness
-                this.cap = cap
-                this.pathEffect = pathEffect
-                this.alpha = alpha
-                this.colorFilter = colorFilter
-                this.blendMode = blendMode
-            }
-
-            constructor(
-                color: Color,
-                thickness: Dp = 2.dp,
-                cap: StrokeCap = Stroke.DefaultCap,
-                pathEffect: PathEffect? = null,
-                @FloatRange alpha: Float = 1f,
-                colorFilter: ColorFilter? = null,
-                blendMode: BlendMode = DefaultBlendMode,
-            ): this(SolidColor(color), thickness, cap, pathEffect, alpha, colorFilter, blendMode)
-        }
-    }
+    data class YAxis(
+        val lines: MutableList<Line>,
+        override val offset: DpOffset = DpOffset.Zero,
+        override val minValue: Double? = null,
+        override val maxValue: Double? = null,
+        override val value: Value,
+        override val gridLines: GridLines? = null,
+        override val dividerCustomization: DividerCustomization? = null,
+        override val valueView: @Composable ((value: Double) -> Unit)? = null,
+    ): GridChartData.Axis.YAxis
 
     class PointClick(
         val isPointInRange: Density.(point: Offset, press: Offset) -> Boolean,

@@ -37,11 +37,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.ChartValueCoordinate
+import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.common.model.Position
 import com.skellyapps.charts.common.model.Zoom
 import com.skellyapps.charts.line.model.LineChartData
 import com.skellyapps.charts.line.view.LineChart
-import com.skellyapps.charts.line.view.LineChart2
+import com.skellyapps.charts.line.view.LineChartRealZoom
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.math.max
 import kotlin.math.pow
@@ -70,11 +71,11 @@ private val greenLine = LineChartData.Line(
     greenTag,
     LineChartData.Line.Customization(colors[greenTag.toInt()], join = StrokeJoin.Round)
 )
-private val leftAxis = LineChartData.Axis.YAxis(
-    lines = listOf(blueLine, yellowLine, greenLine),
-    value = LineChartData.Axis.Value.Step(20.0),
-    gridLines = LineChartData.Axis.GridLines(customization = LineChartData.Axis.DividerCustomization(color = Color.Gray, thickness = 1.dp, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))),
-    dividerCustomization = LineChartData.Axis.DividerCustomization(color = Color.Black, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))) { value ->
+private val leftAxis = LineChartData.YAxis(
+    lines = mutableListOf(blueLine, yellowLine, greenLine),
+    value = GridChartData.Axis.Value.Step(20.0),
+    gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(color = Color.Gray, thickness = 1.dp, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))),
+    dividerCustomization = GridChartData.Axis.DividerCustomization(color = Color.Black, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))) { value ->
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(value.roundToDecimals(1).toString())
         HorizontalDivider(Modifier.width(8.dp))
@@ -86,21 +87,21 @@ private val redLine = LineChartData.Line(
     redTag,
     LineChartData.Line.Customization(colors[redTag.toInt()], join = StrokeJoin.Round)
 )
-private val rightAxis = LineChartData.Axis.YAxis(
-    lines = listOf(redLine),
-    value = LineChartData.Axis.Value.Step(20.0),
-    dividerCustomization = LineChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
+private val rightAxis = LineChartData.YAxis(
+    lines = mutableListOf(redLine),
+    value = GridChartData.Axis.Value.Step(20.0),
+    dividerCustomization = GridChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
     Row(verticalAlignment = Alignment.CenterVertically) {
         HorizontalDivider(Modifier.width(8.dp))
         Text(value.roundToDecimals(1).toString())
     }
 }
-private val bottomAxis = LineChartData.Axis.XAxis(
+private val bottomAxis = GridChartData.Axis.XAxis(
     0.0,
     200.0,
-    LineChartData.Axis.Value.Fixed(8),
-    LineChartData.Axis.GridLines(false, false, LineChartData.Axis.DividerCustomization(color = Color.Gray, 1.dp)),
-    LineChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
+    GridChartData.Axis.Value.Fixed(8),
+    GridChartData.Axis.GridLines(false, false, GridChartData.Axis.DividerCustomization(color = Color.Gray, 1.dp)),
+    GridChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         VerticalDivider(Modifier.height(8.dp))
         Text(value.roundToDecimals(1).toString())
@@ -137,13 +138,13 @@ private val actions = listOf(
     Action("L/R-axis-offset") {
         it.copy(
             leftAxis = it.leftAxis?.copy(
-                DpOffset(
+                offset = DpOffset(
                     Random.nextInt(0, 10).dp,
                     Random.nextInt(0, 10).dp
                 )
             ),
             rightAxis = it.rightAxis?.copy(
-                DpOffset(
+                offset = DpOffset(
                     Random.nextInt(0, 30).dp,
                     Random.nextInt(0, 30).dp
                 )
@@ -184,7 +185,7 @@ fun App() {
                     }
                 }
             }
-            LineChart(
+            LineChartRealZoom(
                 Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp, bottom = 2.dp),
                 chartData,
                 zoom,
@@ -209,7 +210,7 @@ fun App() {
                 pointClick,
                 pointDrag
             )
-            LineChart2(
+            LineChart(
                 Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp, bottom = 2.dp),
                 chartData,
                 zoom,
@@ -217,7 +218,7 @@ fun App() {
                     val radius = 5.dp.toPx()
                     if (offset.x < -radius || offset.x > canvasSize.width + radius ||
                         offset.y < -radius || offset.y > canvasSize.height + radius) {
-                        return@LineChart2
+                        return@LineChart
                     }
                     drawCircle(
                         colors[lineTag.toInt()],
