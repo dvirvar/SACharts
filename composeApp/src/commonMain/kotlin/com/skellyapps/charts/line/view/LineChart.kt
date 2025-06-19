@@ -5,11 +5,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -22,7 +18,10 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -43,9 +42,7 @@ import com.skellyapps.charts.common.model.ChartPixelCoordinate
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.common.model.Zoom
-import com.skellyapps.charts.common.view.AxisColumn
-import com.skellyapps.charts.common.view.AxisRow
-import com.skellyapps.charts.common.view.GridChartCanvas
+import com.skellyapps.charts.common.view.GridChart
 import com.skellyapps.charts.common.view.dividersZIndex
 import com.skellyapps.charts.line.extension.getClosestIndexDistance
 import com.skellyapps.charts.line.extension.getMaxX
@@ -58,14 +55,14 @@ import com.skellyapps.charts.line.model.DraggedPoint
 import com.skellyapps.charts.line.model.LineChartData
 
 internal const val linesZIndex = dividersZIndex + 10f
-internal const val axesZIndex = -1f
 
 @Composable
 fun LineChart(
     modifier: Modifier,
     data: LineChartData,
+    background: Brush = SolidColor(Color.Transparent),
     zoom: Zoom? = null,
-    onEachPoint: (DrawScope.(canvasSize: Size, lineTag: Byte, index: Int, offset: Offset) -> Unit)? = null,
+    onEachPoint: (DrawScope.(canvasSize: Size, lineTag: Int, index: Int, offset: Offset) -> Unit)? = null,
     pointClick: LineChartData.PointClick? = null,
     pointDrag: LineChartData.PointDrag? = null,
     pointDragAfterLongPress: LineChartData.PointDrag? = null,
@@ -134,7 +131,7 @@ fun LineChart(
             }
         }
     }
-    val xAxisViewPort by remember(xAxisOffset, minXValue, maxXValue) {
+    val xAxisViewport by remember(xAxisOffset, minXValue, maxXValue) {
         derivedStateOf {
             val x = ChartPixelCoordinate(canvasOffset.x).toChartValueCoordinate(canvasSize.width, xAxisOffset, minXValue, maxXValue, false)
             val maxX = ChartPixelCoordinate(canvasOffset.x + canvasSize.width.toFloat() / canvasZoom.x).toChartValueCoordinate(canvasSize.width, xAxisOffset, minXValue, maxXValue, false)
@@ -168,7 +165,7 @@ fun LineChart(
             )
         }
     }
-    val leftAxisYViewPort by remember(leftAxisYOffset, leftAxisMinYValue, leftAxisMaxYValue) {
+    val leftAxisYViewport by remember(leftAxisYOffset, leftAxisMinYValue, leftAxisMaxYValue) {
         derivedStateOf {
             if (leftAxisYOffset == null) {
                 ChartValue(1.0, 1.0)
@@ -206,7 +203,7 @@ fun LineChart(
             )
         }
     }
-    val rightAxisYViewPort by remember(rightAxisYOffset, rightAxisMinYValue, rightAxisMaxYValue) {
+    val rightAxisYViewport by remember(rightAxisYOffset, rightAxisMinYValue, rightAxisMaxYValue) {
         derivedStateOf {
             if (rightAxisYOffset == null) {
                 ChartValue(1.0, 1.0)
@@ -217,14 +214,14 @@ fun LineChart(
             }
         }
     }
-    val leftOffsetLines by remember(data.leftAxis?.lines, xAxisViewPort, leftAxisYViewPort) {
+    val leftOffsetLines by remember(data.leftAxis?.lines, xAxisViewport, leftAxisYViewport) {
         derivedStateOf {
-            data.leftAxis?.lines?.toOffsetLines(canvasSize, xAxisViewPort.x, xAxisViewPort.y, leftAxisYViewPort.x, leftAxisYViewPort.y)
+            data.leftAxis?.lines?.toOffsetLines(canvasSize, xAxisViewport.x, xAxisViewport.y, leftAxisYViewport.x, leftAxisYViewport.y)
         }
     }
-    val rightOffsetLines by remember(data.rightAxis?.lines, xAxisViewPort, rightAxisYViewPort) {
+    val rightOffsetLines by remember(data.rightAxis?.lines, xAxisViewport, rightAxisYViewport) {
         derivedStateOf {
-            data.rightAxis?.lines?.toOffsetLines(canvasSize, xAxisViewPort.x, xAxisViewPort.y, rightAxisYViewPort.x, rightAxisYViewPort.y)
+            data.rightAxis?.lines?.toOffsetLines(canvasSize, xAxisViewport.x, xAxisViewport.y, rightAxisYViewport.x, rightAxisYViewport.y)
         }
     }
     val leftAxisValues by remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis?.value) {
@@ -248,328 +245,293 @@ fun LineChart(
         }
     }
     var clickedPoint by remember { mutableStateOf<ClickedPoint?>(null) }
-    val clickedPointOffset by remember(xAxisViewPort, leftAxisYViewPort, rightAxisYViewPort) {
+    val clickedPointOffset by remember(xAxisViewport, leftAxisYViewport, rightAxisYViewport) {
         derivedStateOf {
             clickedPoint?.let { p -> if (p.isLeftAxis) leftOffsetLines?.fastFirstOrNull { it.tag == p.lineTag }?.offsets?.getOrNull(p.index) else rightOffsetLines?.fastFirstOrNull { it.tag == p.lineTag }?.offsets?.getOrNull(p.index) }
         }
     }
     var draggedPoint by remember { mutableStateOf<DraggedPoint?>(null) }
-    Row(modifier) {
-        data.leftAxis?.let { axis ->
-            axis.valueView?.let {
-                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), true, leftAxisValues, leftAxisYViewPort.x, leftAxisYViewPort.y) {
-                    leftAxisValues.fastForEach { value ->
-                        it(value.value)
-                    }
-                }
-            }
-        }
-        Column(Modifier.weight(1f)) {
-            GridChartCanvas(
-                Modifier.fillMaxWidth().weight(1f).onSizeChanged {
-                    canvasSize = it
-                },
-                data.leftAxis,
-                data.rightAxis,
-                data.bottomAxis,
-                leftAxisYViewPort.x,
-                leftAxisYViewPort.y,
-                rightAxisYViewPort.x,
-                rightAxisYViewPort.y,
-                xAxisViewPort.x,
-                xAxisViewPort.y,
-                leftAxisValues,
-                rightAxisValues,
-                bottomAxisValues,
-            ) {
-                //Lines canvas
-                Box(Modifier
-                    .fillMaxSize()
-                    .zIndex(linesZIndex)
-                    .`if`(clipToBounds, Modifier.clipToBounds())
-                    .`if`(zoom != null, Modifier.pointerInput(zoom) {
-                        detectTransformGestures(
-                            onGesture = { centroid,
-                                          pan,
-                                          gestureZoom,
-                                          orientation,
-                                          type,
-                                          changes ->
-                                if (type == PointerEventType.Scroll || changes.size > 1) {
-                                    val newScale = if (type == PointerEventType.Scroll) {
-                                        val addition = if (gestureZoom < 0f) zoom!!.scrollJump else -zoom!!.scrollJump
-                                        Offset((canvasZoom.x + addition).coerceIn(1f, zoom.max), (canvasZoom.y + addition).coerceIn(1f, zoom.max))
-                                    } else {
-                                        var x = canvasZoom.x
-                                        if (orientation != Orientation.Vertical) {
-                                            x = (x * gestureZoom).coerceIn(1f, zoom!!.max)
-                                        }
-                                        var y = canvasZoom.y
-                                        if (orientation != Orientation.Horizontal) {
-                                            y = (y * gestureZoom).coerceIn(1f, zoom!!.max)
-                                        }
-                                        Offset(x, y)
-                                    }
-                                    val newX = ((canvasOffset.x + centroid.x / canvasZoom.x) - (centroid.x / newScale.x + pan.x / canvasZoom.x)).coerceIn(0f, size.width - size.width / newScale.x)
-                                    val newY = ((canvasOffset.y + centroid.y / canvasZoom.y) - (centroid.y / newScale.y + pan.y / canvasZoom.y)).coerceIn(0f, size.height - size.height / newScale.y)
-                                    canvasOffset = Offset(newX, newY)
-                                    canvasZoom = newScale
-                                    changes.forEach { it.consume() }
-                                }
-                            }
-                        )
-                    })
-                    .`if`(pointClick != null, Modifier.pointerInput(xAxisViewPort, leftAxisYViewPort, rightAxisYViewPort) {
-                        detectTapGestures(
-                            onTap = { offset ->
-                                var minDistance = -1f
-                                var minDistanceClickedPoint: ClickedPoint? = null
-                                leftOffsetLines?.fastForEach { line ->
-                                    line.getClosestIndexDistance(offset) { point, press ->
-                                        pointClick!!.isPointInRange(
-                                            density,
-                                            point,
-                                            press
-                                        )
-                                    }?.let {
-                                        if (minDistance < 0f || it.second < minDistance) {
-                                            minDistance = it.second
-                                            minDistanceClickedPoint = ClickedPoint(it.first, line.tag, true)
-                                        }
-                                    }
-                                }
-                                rightOffsetLines?.fastForEach { line ->
-                                    line.getClosestIndexDistance(offset) { point, press ->
-                                        pointClick!!.isPointInRange(
-                                            density,
-                                            point,
-                                            press
-                                        )
-                                    }?.let {
-                                        if (minDistance < 0f || it.second < minDistance) {
-                                            minDistance = it.second
-                                            minDistanceClickedPoint = ClickedPoint(it.first, line.tag, false)
-                                        }
-                                    }
-                                }
-                                clickedPoint = minDistanceClickedPoint
-                            }
-                        )
-                    })
-                    .pointerInput(data.xAxisOffset, data.leftAxis?.offset, data.leftAxis?.minValue, data.leftAxis?.maxValue,data.rightAxis?.offset, data.rightAxis?.minValue, data.rightAxis?.maxValue, data.bottomAxis?.minValue, data.bottomAxis?.maxValue) {
-                        detectDragGestures(onDragStart = { offset ->
-                            if (pointDrag == null) {
-                                return@detectDragGestures
-                            }
-                            var minDistance = -1f
-                            var minDistanceDraggedPoint: DraggedPoint? = null
-                            leftOffsetLines?.fastForEach { line ->
-                                line.getClosestIndexDistance(offset) { point, press ->
-                                    pointDrag.isPointInRange(
-                                        density,
-                                        point,
-                                        press
-                                    )
-                                }?.let {
-                                    if (minDistance < 0f || it.second < minDistance) {
-                                        minDistance = it.second
-                                        minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, true)
-                                    }
-                                }
-                            }
-                            rightOffsetLines?.fastForEach { line ->
-                                line.getClosestIndexDistance(offset) { point, press ->
-                                    pointDrag.isPointInRange(
-                                        density,
-                                        point,
-                                        press
-                                    )
-                                }?.let {
-                                    if (minDistance < 0f || it.second < minDistance) {
-                                        minDistance = it.second
-                                        minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, false)
-                                    }
-                                }
-                            }
-                            draggedPoint = minDistanceDraggedPoint
-                        }, onDragEnd = {draggedPoint = null}, onDragCancel = {draggedPoint = null}) { change, offset ->
-                            if (pointDrag != null && draggedPoint != null) {
-                                val position = change.position
-                                val point = ChartPixel(position).toChartValue(
-                                    size,
-                                    xAxisViewPort.x,
-                                    xAxisViewPort.y,
-                                    if (draggedPoint!!.isLeftAxis) leftAxisYViewPort.x else rightAxisYViewPort.x,
-                                    if (draggedPoint!!.isLeftAxis) leftAxisYViewPort.y else rightAxisYViewPort.y
-                                )
-                                pointDrag.pointDragged(draggedPoint!!.lineTag, draggedPoint!!.index, point)
+    GridChart(
+        modifier,
+        background,
+        data.leftAxis,
+        data.rightAxis,
+        data.bottomAxis,
+        leftAxisValues,
+        rightAxisValues,
+        bottomAxisValues,
+        leftAxisYViewport,
+        rightAxisYViewport,
+        xAxisViewport,
+        {canvasSize = it}
+    ) {
+        //Lines canvas
+        Box(Modifier
+            .fillMaxSize()
+            .zIndex(linesZIndex)
+            .`if`(clipToBounds, Modifier.clipToBounds())
+            .`if`(zoom != null, Modifier.pointerInput(zoom) {
+                detectTransformGestures(
+                    onGesture = { centroid,
+                                  pan,
+                                  gestureZoom,
+                                  orientation,
+                                  type,
+                                  changes ->
+                        if (type == PointerEventType.Scroll || changes.size > 1) {
+                            val newScale = if (type == PointerEventType.Scroll) {
+                                val addition = if (gestureZoom < 0f) zoom!!.scrollJump else -zoom!!.scrollJump
+                                Offset((canvasZoom.x + addition).coerceIn(1f, zoom.max), (canvasZoom.y + addition).coerceIn(1f, zoom.max))
                             } else {
-                                canvasOffset = canvasZoom.run {
-                                    Offset((canvasOffset - offset / x).x.coerceIn(0f, size.width - size.width / canvasZoom.x), (canvasOffset - offset / y).y.coerceIn(0f, size.height - size.height / canvasZoom.y))
+                                var x = canvasZoom.x
+                                if (orientation != Orientation.Vertical) {
+                                    x = (x * gestureZoom).coerceIn(1f, zoom!!.max)
                                 }
+                                var y = canvasZoom.y
+                                if (orientation != Orientation.Horizontal) {
+                                    y = (y * gestureZoom).coerceIn(1f, zoom!!.max)
+                                }
+                                Offset(x, y)
                             }
+                            val newX = ((canvasOffset.x + centroid.x / canvasZoom.x) - (centroid.x / newScale.x + pan.x / canvasZoom.x)).coerceIn(0f, size.width - size.width / newScale.x)
+                            val newY = ((canvasOffset.y + centroid.y / canvasZoom.y) - (centroid.y / newScale.y + pan.y / canvasZoom.y)).coerceIn(0f, size.height - size.height / newScale.y)
+                            canvasOffset = Offset(newX, newY)
+                            canvasZoom = newScale
+                            changes.forEach { it.consume() }
                         }
                     }
-                    .`if`(pointDragAfterLongPress != null, Modifier.pointerInput(data.xAxisOffset, data.leftAxis?.minValue, data.leftAxis?.maxValue, data.rightAxis?.minValue, data.rightAxis?.maxValue, data.bottomAxis?.minValue, data.bottomAxis?.maxValue) {
-                        detectDragGesturesAfterLongPress(onDragStart = { offset ->
-                            var minDistance = -1f
-                            var minDistanceDraggedPoint: DraggedPoint? = null
-                            leftOffsetLines?.fastForEach { line ->
-                                line.getClosestIndexDistance(offset) { point, press ->
-                                    pointDragAfterLongPress!!.isPointInRange(
-                                        density,
-                                        point,
-                                        press
-                                    )
-                                }?.let {
-                                    if (minDistance < 0f || it.second < minDistance) {
-                                        minDistance = it.second
-                                        minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, true)
-                                    }
-                                }
-                            }
-                            rightOffsetLines?.fastForEach { line ->
-                                line.getClosestIndexDistance(offset) { point, press ->
-                                    pointDragAfterLongPress!!.isPointInRange(
-                                        density,
-                                        point,
-                                        press
-                                    )
-                                }?.let {
-                                    if (minDistance < 0f || it.second < minDistance) {
-                                        minDistance = it.second
-                                        minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, false)
-                                    }
-                                }
-                            }
-                            draggedPoint = minDistanceDraggedPoint
-                        }, onDragEnd = {draggedPoint = null}, onDragCancel = {draggedPoint = null}) { change, offset ->
-                            if (draggedPoint != null) {
-                                val position = change.position
-                                val point = ChartPixel(position).toChartValue(
-                                    size,
-                                    xAxisViewPort.x,
-                                    xAxisViewPort.y,
-                                    if (draggedPoint!!.isLeftAxis) leftAxisYViewPort.x else rightAxisYViewPort.x,
-                                    if (draggedPoint!!.isLeftAxis) leftAxisYViewPort.y else rightAxisYViewPort.y
-                                )
-                                pointDragAfterLongPress!!.pointDragged(draggedPoint!!.lineTag, draggedPoint!!.index, point)
-                            }
-                        }
-                    })
-                    .drawWithContent {
+                )
+            })
+            .`if`(pointClick != null, Modifier.pointerInput(xAxisViewport, leftAxisYViewport, rightAxisYViewport) {
+                detectTapGestures(
+                    onTap = { offset ->
+                        var minDistance = -1f
+                        var minDistanceClickedPoint: ClickedPoint? = null
                         leftOffsetLines?.fastForEach { line ->
-                            val path = Path().apply {
-                                line.offsets.fastForEachIndexed { index, chartPixel ->
-                                    if (index == 0) {
-                                        moveTo(chartPixel.x.value, chartPixel.y.value)
-                                    } else {
-                                        lineTo(chartPixel.x.value, chartPixel.y.value)
-                                    }
-                                }
-                            }
-                            drawPath(
-                                path,
-                                line.customization.brush,
-                                line.customization.alpha,
-                                Stroke(line.customization.thickness.toPx(), line.customization.miter, line.customization.cap, line.customization.join, line.customization.pathEffect),
-                                line.customization.colorFilter,
-                                line.customization.blendMode
-                            )
-                            if (line.fillCustomization != null && line.offsets.isNotEmpty()) {
-                                path.lineTo(line.offsets.last().x.value, size.height)
-                                path.lineTo(line.offsets.first().x.value, size.height)
-                                path.close()
-                                drawPath(
-                                    path,
-                                    line.fillCustomization.brush,
-                                    line.fillCustomization.alpha,
-                                    Fill,
-                                    line.fillCustomization.colorFilter,
-                                    line.fillCustomization.blendMode
+                            line.getClosestIndexDistance(offset) { point, press ->
+                                pointClick!!.isPointInRange(
+                                    density,
+                                    point,
+                                    press
                                 )
-                            }
-                            //Let the users config what they want on the point
-                            onEachPoint?.let {
-                                line.offsets.fastForEachIndexed { index, chartPixel ->
-                                    onEachPoint(this, size, line.tag, index, chartPixel.offset)
+                            }?.let {
+                                if (minDistance < 0f || it.second < minDistance) {
+                                    minDistance = it.second
+                                    minDistanceClickedPoint = ClickedPoint(it.first, line.tag, true)
                                 }
                             }
                         }
-                        //Draw the lines connecting the points
                         rightOffsetLines?.fastForEach { line ->
-                            val path = Path().apply {
-                                line.offsets.fastForEachIndexed { index, chartPixel ->
-                                    if (index == 0) {
-                                        moveTo(chartPixel.x.value, chartPixel.y.value)
-                                    } else {
-                                        lineTo(chartPixel.x.value, chartPixel.y.value)
-                                    }
-                                }
-                            }
-                            drawPath(
-                                path,
-                                line.customization.brush,
-                                line.customization.alpha,
-                                Stroke(line.customization.thickness.toPx(), line.customization.miter, line.customization.cap, line.customization.join, line.customization.pathEffect),
-                                line.customization.colorFilter,
-                                line.customization.blendMode
-                            )
-                            if (line.fillCustomization != null && line.offsets.isNotEmpty()) {
-                                path.lineTo(line.offsets.last().x.value, size.height)
-                                path.lineTo(line.offsets.first().x.value, size.height)
-                                path.close()
-                                drawPath(
-                                    path,
-                                    line.fillCustomization.brush,
-                                    line.fillCustomization.alpha,
-                                    Fill,
-                                    line.fillCustomization.colorFilter,
-                                    line.fillCustomization.blendMode
+                            line.getClosestIndexDistance(offset) { point, press ->
+                                pointClick!!.isPointInRange(
+                                    density,
+                                    point,
+                                    press
                                 )
-                            }
-                            //Let the users config what they want on the point
-                            onEachPoint?.let {
-                                line.offsets.fastForEachIndexed { index, chartPixel ->
-                                    onEachPoint(this, size, line.tag, index, chartPixel.offset)
+                            }?.let {
+                                if (minDistance < 0f || it.second < minDistance) {
+                                    minDistance = it.second
+                                    minDistanceClickedPoint = ClickedPoint(it.first, line.tag, false)
                                 }
                             }
                         }
-                        drawContent()
-                    }) {
-                    if (pointClick != null && clickedPoint != null && clickedPointOffset != null) {
-                        var viewSize by remember { mutableStateOf(IntSize.Zero) }
-                        Box(Modifier
-                            .onSizeChanged { viewSize = it }
-                            .offset {
-                                pointClick.getViewOffset(this, canvasSize.width, canvasSize.height, viewSize, clickedPointOffset!!)
+                        clickedPoint = minDistanceClickedPoint
+                    }
+                )
+            })
+            .pointerInput(data.xAxisOffset, data.leftAxis?.offset, data.leftAxis?.minValue, data.leftAxis?.maxValue,data.rightAxis?.offset, data.rightAxis?.minValue, data.rightAxis?.maxValue, data.bottomAxis?.minValue, data.bottomAxis?.maxValue) {
+                detectDragGestures(onDragStart = { offset ->
+                    if (pointDrag == null) {
+                        return@detectDragGestures
+                    }
+                    var minDistance = -1f
+                    var minDistanceDraggedPoint: DraggedPoint? = null
+                    leftOffsetLines?.fastForEach { line ->
+                        line.getClosestIndexDistance(offset) { point, press ->
+                            pointDrag.isPointInRange(
+                                density,
+                                point,
+                                press
+                            )
+                        }?.let {
+                            if (minDistance < 0f || it.second < minDistance) {
+                                minDistance = it.second
+                                minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, true)
                             }
-                        ) {
-                            pointClick.view(clickedPoint!!.lineTag, clickedPoint!!.index)
+                        }
+                    }
+                    rightOffsetLines?.fastForEach { line ->
+                        line.getClosestIndexDistance(offset) { point, press ->
+                            pointDrag.isPointInRange(
+                                density,
+                                point,
+                                press
+                            )
+                        }?.let {
+                            if (minDistance < 0f || it.second < minDistance) {
+                                minDistance = it.second
+                                minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, false)
+                            }
+                        }
+                    }
+                    draggedPoint = minDistanceDraggedPoint
+                }, onDragEnd = {draggedPoint = null}, onDragCancel = {draggedPoint = null}) { change, offset ->
+                    if (pointDrag != null && draggedPoint != null) {
+                        val position = change.position
+                        val point = ChartPixel(position).toChartValue(
+                            size,
+                            xAxisViewport.x,
+                            xAxisViewport.y,
+                            if (draggedPoint!!.isLeftAxis) leftAxisYViewport.x else rightAxisYViewport.x,
+                            if (draggedPoint!!.isLeftAxis) leftAxisYViewport.y else rightAxisYViewport.y
+                        )
+                        pointDrag.pointDragged(draggedPoint!!.lineTag, draggedPoint!!.index, point)
+                    } else {
+                        canvasOffset = canvasZoom.run {
+                            Offset((canvasOffset - offset / x).x.coerceIn(0f, size.width - size.width / canvasZoom.x), (canvasOffset - offset / y).y.coerceIn(0f, size.height - size.height / canvasZoom.y))
                         }
                     }
                 }
             }
-            data.bottomAxis?.let { axis ->
-                axis.valueView?.let {
-                    AxisRow(Modifier.fillMaxWidth().zIndex(axesZIndex), bottomAxisValues, xAxisViewPort.x, xAxisViewPort.y) {
-                        bottomAxisValues.fastForEach { value ->
-                            it(value.value)
+            .`if`(pointDragAfterLongPress != null, Modifier.pointerInput(data.xAxisOffset, data.leftAxis?.minValue, data.leftAxis?.maxValue, data.rightAxis?.minValue, data.rightAxis?.maxValue, data.bottomAxis?.minValue, data.bottomAxis?.maxValue) {
+                detectDragGesturesAfterLongPress(onDragStart = { offset ->
+                    var minDistance = -1f
+                    var minDistanceDraggedPoint: DraggedPoint? = null
+                    leftOffsetLines?.fastForEach { line ->
+                        line.getClosestIndexDistance(offset) { point, press ->
+                            pointDragAfterLongPress!!.isPointInRange(
+                                density,
+                                point,
+                                press
+                            )
+                        }?.let {
+                            if (minDistance < 0f || it.second < minDistance) {
+                                minDistance = it.second
+                                minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, true)
+                            }
+                        }
+                    }
+                    rightOffsetLines?.fastForEach { line ->
+                        line.getClosestIndexDistance(offset) { point, press ->
+                            pointDragAfterLongPress!!.isPointInRange(
+                                density,
+                                point,
+                                press
+                            )
+                        }?.let {
+                            if (minDistance < 0f || it.second < minDistance) {
+                                minDistance = it.second
+                                minDistanceDraggedPoint = DraggedPoint(it.first, line.tag, false)
+                            }
+                        }
+                    }
+                    draggedPoint = minDistanceDraggedPoint
+                }, onDragEnd = {draggedPoint = null}, onDragCancel = {draggedPoint = null}) { change, offset ->
+                    if (draggedPoint != null) {
+                        val position = change.position
+                        val point = ChartPixel(position).toChartValue(
+                            size,
+                            xAxisViewport.x,
+                            xAxisViewport.y,
+                            if (draggedPoint!!.isLeftAxis) leftAxisYViewport.x else rightAxisYViewport.x,
+                            if (draggedPoint!!.isLeftAxis) leftAxisYViewport.y else rightAxisYViewport.y
+                        )
+                        pointDragAfterLongPress!!.pointDragged(draggedPoint!!.lineTag, draggedPoint!!.index, point)
+                    }
+                }
+            })
+            .drawWithContent {
+                leftOffsetLines?.fastForEach { line ->
+                    val path = Path().apply {
+                        line.offsets.fastForEachIndexed { index, chartPixel ->
+                            if (index == 0) {
+                                moveTo(chartPixel.x.value, chartPixel.y.value)
+                            } else {
+                                lineTo(chartPixel.x.value, chartPixel.y.value)
+                            }
+                        }
+                    }
+                    drawPath(
+                        path,
+                        line.customization.brush,
+                        line.customization.alpha,
+                        Stroke(line.customization.thickness.toPx(), line.customization.miter, line.customization.cap, line.customization.join, line.customization.pathEffect),
+                        line.customization.colorFilter,
+                        line.customization.blendMode
+                    )
+                    if (line.fillCustomization != null && line.offsets.isNotEmpty()) {
+                        path.lineTo(line.offsets.last().x.value, size.height)
+                        path.lineTo(line.offsets.first().x.value, size.height)
+                        path.close()
+                        drawPath(
+                            path,
+                            line.fillCustomization.brush,
+                            line.fillCustomization.alpha,
+                            Fill,
+                            line.fillCustomization.colorFilter,
+                            line.fillCustomization.blendMode
+                        )
+                    }
+                    //Let the users config what they want on the point
+                    onEachPoint?.let {
+                        line.offsets.fastForEachIndexed { index, chartPixel ->
+                            onEachPoint(this, size, line.tag, index, chartPixel.offset)
                         }
                     }
                 }
-            }
-        }
-        data.rightAxis?.let { axis ->
-            axis.valueView?.let {
-                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(
-                    axesZIndex
-                ), false, rightAxisValues, rightAxisYViewPort.x, rightAxisYViewPort.y) {
-                    rightAxisValues.fastForEach { value ->
-                        it(value.value)
+                //Draw the lines connecting the points
+                rightOffsetLines?.fastForEach { line ->
+                    val path = Path().apply {
+                        line.offsets.fastForEachIndexed { index, chartPixel ->
+                            if (index == 0) {
+                                moveTo(chartPixel.x.value, chartPixel.y.value)
+                            } else {
+                                lineTo(chartPixel.x.value, chartPixel.y.value)
+                            }
+                        }
                     }
+                    drawPath(
+                        path,
+                        line.customization.brush,
+                        line.customization.alpha,
+                        Stroke(line.customization.thickness.toPx(), line.customization.miter, line.customization.cap, line.customization.join, line.customization.pathEffect),
+                        line.customization.colorFilter,
+                        line.customization.blendMode
+                    )
+                    if (line.fillCustomization != null && line.offsets.isNotEmpty()) {
+                        path.lineTo(line.offsets.last().x.value, size.height)
+                        path.lineTo(line.offsets.first().x.value, size.height)
+                        path.close()
+                        drawPath(
+                            path,
+                            line.fillCustomization.brush,
+                            line.fillCustomization.alpha,
+                            Fill,
+                            line.fillCustomization.colorFilter,
+                            line.fillCustomization.blendMode
+                        )
+                    }
+                    //Let the users config what they want on the point
+                    onEachPoint?.let {
+                        line.offsets.fastForEachIndexed { index, chartPixel ->
+                            onEachPoint(this, size, line.tag, index, chartPixel.offset)
+                        }
+                    }
+                }
+                drawContent()
+            }) {
+            if (pointClick != null && clickedPoint != null && clickedPointOffset != null) {
+                var viewSize by remember { mutableStateOf(IntSize.Zero) }
+                Box(Modifier
+                    .onSizeChanged { viewSize = it }
+                    .offset {
+                        pointClick.getViewOffset(this, canvasSize, viewSize, clickedPointOffset!!)
+                    }
+                ) {
+                    pointClick.view(clickedPoint!!.lineTag, clickedPoint!!.index)
                 }
             }
         }
+
     }
 }

@@ -24,22 +24,19 @@ import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.common.model.ChartPixel
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
-import com.skellyapps.charts.common.model.GridChartData.Axis.DividerCustomization
-import com.skellyapps.charts.common.model.GridChartData.Axis.GridLines
-import com.skellyapps.charts.common.model.GridChartData.Axis.Value
 import com.skellyapps.charts.common.model.Position
 import kotlin.math.abs
 
 data class LineChartData(
     val leftAxis: YAxis? = null,
     val rightAxis: YAxis? = null,
-    val bottomAxis: GridChartData.Axis.XAxis? = null,
+    val bottomAxis: XAxis? = null,
     val xAxisOffset: DpOffset = DpOffset.Zero
 ) {
     data class Line(
         val points: MutableList<ChartValue>,
         val pointsOrder: PointsOrder,
-        val tag: Byte,
+        val tag: Int,
         val customization: Customization,
         val fillCustomization: FillCustomization? = null,
     ) {
@@ -124,39 +121,17 @@ data class LineChartData(
                 }
             }
         }
-        class Customization {
-            val brush: Brush
-            @FloatRange val alpha: Float
-            val thickness: Dp
-            val miter: Float
-            val cap: StrokeCap
-            val join: StrokeJoin
-            val pathEffect: PathEffect?
-            val colorFilter: ColorFilter?
-            val blendMode: BlendMode
-
-            constructor(
-                brush: Brush,
-                @FloatRange alpha: Float = 1f,
-                thickness: Dp = 5.dp,
-                miter: Float = Stroke.DefaultMiter,
-                cap: StrokeCap = Stroke.DefaultCap,
-                join: StrokeJoin = Stroke.DefaultJoin,
-                pathEffect: PathEffect? = null,
-                colorFilter: ColorFilter? = null,
-                blendMode: BlendMode = DefaultBlendMode,
-            ) {
-                this.brush = brush
-                this.alpha = alpha
-                this.thickness = thickness
-                this.miter = miter
-                this.cap = cap
-                this.join = join
-                this.pathEffect = pathEffect
-                this.colorFilter = colorFilter
-                this.blendMode = blendMode
-            }
-
+        data class Customization(
+            val brush: Brush,
+            @FloatRange val alpha: Float = 1f,
+            val thickness: Dp = 5.dp,
+            val miter: Float = Stroke.DefaultMiter,
+            val cap: StrokeCap = Stroke.DefaultCap,
+            val join: StrokeJoin = Stroke.DefaultJoin,
+            val pathEffect: PathEffect? = null,
+            val colorFilter: ColorFilter? = null,
+            val blendMode: BlendMode = DefaultBlendMode,
+        ) {
             constructor(
                 color: Color,
                 @FloatRange alpha: Float = 1f,
@@ -169,24 +144,12 @@ data class LineChartData(
                 blendMode: BlendMode = DefaultBlendMode,
             ): this(SolidColor(color), alpha, thickness, miter, cap, join, pathEffect, colorFilter, blendMode)
         }
-        class FillCustomization {
-            val brush: Brush
-            @FloatRange val alpha: Float
-            val colorFilter: ColorFilter?
-            val blendMode: BlendMode
-
-            constructor(
-                brush: Brush,
-                @FloatRange alpha: Float = 1f,
-                colorFilter: ColorFilter? = null,
-                blendMode: BlendMode = DefaultBlendMode,
-            ) {
-                this.brush = brush
-                this.alpha = alpha
-                this.colorFilter = colorFilter
-                this.blendMode = blendMode
-            }
-
+        data class FillCustomization(
+            val brush: Brush,
+            @FloatRange val alpha: Float = 1f,
+            val colorFilter: ColorFilter? = null,
+            val blendMode: BlendMode = DefaultBlendMode
+        ) {
             constructor(
                 color: Color,
                 @FloatRange alpha: Float = 1f,
@@ -199,19 +162,28 @@ data class LineChartData(
     internal data class OffsetLine(
         val offsets: List<ChartPixel>,
         val pointsOrder: Line.PointsOrder,
-        val tag: Byte,
+        val tag: Int,
         val customization: Line.Customization,
         val fillCustomization: Line.FillCustomization?
     )
+
+     data class XAxis(
+         val minValue: Double? = null,
+         val maxValue: Double? = null,
+         override val value: GridChartData.Axis.Value,
+         override val gridLines: GridChartData.Axis.GridLines? = null,
+         override val dividerCustomization: GridChartData.Axis.DividerCustomization? = null,
+         override val valueView: @Composable ((value: Double) -> Unit)? = null,
+     ): GridChartData.Axis.XAxis
 
     data class YAxis(
         val lines: MutableList<Line>,
         override val offset: DpOffset = DpOffset.Zero,
         override val minValue: Double? = null,
         override val maxValue: Double? = null,
-        override val value: Value,
-        override val gridLines: GridLines? = null,
-        override val dividerCustomization: DividerCustomization? = null,
+        override val value: GridChartData.Axis.Value,
+        override val gridLines: GridChartData.Axis.GridLines? = null,
+        override val dividerCustomization: GridChartData.Axis.DividerCustomization? = null,
         override val valueView: @Composable ((value: Double) -> Unit)? = null,
     ): GridChartData.Axis.YAxis
 
@@ -220,9 +192,9 @@ data class LineChartData(
         val viewPosition: Position,
         val viewOffset: DpOffset,
         val viewStayInChartBounds: Boolean,
-        val view: @Composable (lineTag: Byte, index: Int) -> Unit,
+        val view: @Composable (lineTag: Int, index: Int) -> Unit,
     ) {
-        internal fun getViewOffset(density: Density, canvasWidth: Int, canvasHeight: Int, viewSize: IntSize, viewOffsetInCanvas: ChartPixel): IntOffset {
+        internal fun getViewOffset(density: Density, canvasSize: IntSize, viewSize: IntSize, viewOffsetInCanvas: ChartPixel): IntOffset {
             val viewOffset = with(density) {
                 IntOffset(viewOffset.x.roundToPx(), viewOffset.y.roundToPx())
             }
@@ -267,8 +239,8 @@ data class LineChartData(
                 }
             }
             if (viewStayInChartBounds) {
-                x = x.coerceIn(0, canvasWidth - viewSize.width)
-                y = y.coerceIn(0, canvasHeight - viewSize.height)
+                x = x.coerceIn(0, canvasSize.width - viewSize.width)
+                y = y.coerceIn(0, canvasSize.height - viewSize.height)
             }
             return IntOffset(x, y)
         }
@@ -276,6 +248,6 @@ data class LineChartData(
 
     class PointDrag(
         val isPointInRange: Density.(point: Offset, press: Offset) -> Boolean,
-        val pointDragged: (lineTag: Byte, index: Int, newPosition: ChartValue) -> Unit
+        val pointDragged: (lineTag: Int, index: Int, newPosition: ChartValue) -> Unit
     )
 }

@@ -67,7 +67,7 @@ internal fun GridChartCanvas(
                     val startIndex = if (it.showFirstLine) 0 else 1
                     val endIndex = if (it.showLastLine) rightAxisValues.size - 1 else rightAxisValues.size - 2
                     for (i in startIndex..endIndex) {
-                        val yOffset = leftAxisValues[i].toChartPixelCoordinate(size.height, rightAxisMinYValue, rightAxisMaxYValue, true).value
+                        val yOffset = rightAxisValues[i].toChartPixelCoordinate(size.height, rightAxisMinYValue, rightAxisMaxYValue, true).value
                         drawLine(
                             it.customization.brush,
                             Offset(size.width, yOffset),
@@ -112,8 +112,8 @@ internal fun GridChartCanvas(
                 val thickness = it.thickness.toPx()
                 drawLine(
                     it.brush,
-                    Offset(0f , 0f),
-                    Offset(0f, size.height),
+                    Offset(0f , size.height),
+                    Offset(0f, 0f),
                     thickness,
                     it.cap,
                     it.pathEffect,
@@ -127,8 +127,8 @@ internal fun GridChartCanvas(
                 val thickness = it.thickness.toPx()
                 drawLine(
                     it.brush,
-                    Offset(size.width, 0f),
                     Offset(size.width, size.height),
+                    Offset(size.width, 0f),
                     thickness,
                     it.cap,
                     it.pathEffect,
@@ -217,7 +217,7 @@ internal fun GridChartCanvas(
                     val endIndex = if (it.showLastLine) rightAxisValues.size - 1 else rightAxisValues.size - 2
                     val offset = Offset(axis.offset.x.toPx(), axis.offset.y.toPx())
                     for (i in startIndex..endIndex) {
-                        val yOffset = leftAxisValues[i].toChartPixelCoordinate(size.height, offset, rightAxisMinYValue, rightAxisMaxYValue, true).value
+                        val yOffset = rightAxisValues[i].toChartPixelCoordinate(size.height, offset, rightAxisMinYValue, rightAxisMaxYValue, true).value
                         drawLine(
                             it.customization.brush,
                             Offset(size.width, yOffset),

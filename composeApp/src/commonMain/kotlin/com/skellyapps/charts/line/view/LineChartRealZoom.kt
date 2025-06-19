@@ -18,10 +18,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
@@ -45,6 +49,7 @@ import com.skellyapps.charts.common.model.Zoom
 import com.skellyapps.charts.common.view.AxisColumn
 import com.skellyapps.charts.common.view.AxisRow
 import com.skellyapps.charts.common.view.GridChartCanvas
+import com.skellyapps.charts.common.view.axesZIndex
 import com.skellyapps.charts.line.extension.getClosestIndexDistance
 import com.skellyapps.charts.line.extension.getMaxX
 import com.skellyapps.charts.line.extension.getMaxY
@@ -59,8 +64,9 @@ import com.skellyapps.charts.line.model.LineChartData
 fun LineChartRealZoom(
     modifier: Modifier,
     data: LineChartData,
+    background: Brush = SolidColor(Color.Transparent),
     zoom: Zoom? = null,
-    onEachPoint: (DrawScope.(canvasSize: Size, lineTag: Byte, index: Int, offset: Offset) -> Unit)? = null,
+    onEachPoint: (DrawScope.(canvasSize: Size, lineTag: Int, index: Int, offset: Offset) -> Unit)? = null,
     pointClick: LineChartData.PointClick? = null,
     pointDrag: LineChartData.PointDrag? = null,
     pointDragAfterLongPress: LineChartData.PointDrag? = null,
@@ -229,6 +235,8 @@ fun LineChartRealZoom(
             GridChartCanvas(
                 Modifier.fillMaxWidth().weight(1f).onSizeChanged {
                     canvasSize = it
+                }.drawBehind {
+                    drawRect(background)
                 },
                 data.leftAxis,
                 data.rightAxis,
@@ -510,7 +518,7 @@ fun LineChartRealZoom(
                         Box(Modifier
                             .onSizeChanged { viewSize = it }
                             .offset {
-                                pointClick.getViewOffset(this, canvasSize.width, canvasSize.height, viewSize, clickedPointOffset!!)
+                                pointClick.getViewOffset(this, canvasSize, viewSize, clickedPointOffset!!)
                             }
                         ) {
                             pointClick.view(clickedPoint!!.lineTag, clickedPoint!!.index)

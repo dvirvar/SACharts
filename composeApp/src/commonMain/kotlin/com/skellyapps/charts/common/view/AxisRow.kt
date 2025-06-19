@@ -42,7 +42,7 @@ internal fun AxisRow(
                 // Position item on the screen
                 val xOffset = (((values[index] - minXValue).value / xRange) * scaledCanvasWidth + scaledCanvasOffset)
                 if (xOffset >= 0.0 && xOffset <= maxWidthTolerance) {
-                    placeable.placeRelative(x = (xOffset - (placeable.width / 2.0)).fastRoundToInt(), y = 0)
+                    placeable.placeRelative(x = (xOffset - (placeable.width / 2f)).fastRoundToInt(), y = 0)
                 }
             }
         }
@@ -76,7 +76,7 @@ internal fun AxisRow(
                 // Position item on the screen
                 val xOffset = values[index].toChartPixelCoordinate(constraints.maxWidth, minXValue, maxXValue, false).value
                 if (xOffset >= 0.0 && xOffset <= maxWidthTolerance) {
-                    placeable.placeRelative(x = (xOffset - (placeable.width / 2.0)).fastRoundToInt(), y = 0)
+                    placeable.placeRelative(x = (xOffset - (placeable.width / 2f)).fastRoundToInt(), y = 0)
                 }
             }
         }

@@ -18,24 +18,17 @@ import kotlin.jvm.JvmInline
 
 class GridChartData {
     sealed interface Axis {
-        val minValue: Double?
-        val maxValue: Double?
         val value: Value
         val gridLines: GridLines?
         val dividerCustomization: DividerCustomization?
         val valueView: @Composable ((value: Double) -> Unit)?
 
-        data class XAxis(
-            override val minValue: Double? = null,
-            override val maxValue: Double? = null,
-            override val value: Value,
-            override val gridLines: GridLines? = null,
-            override val dividerCustomization: DividerCustomization? = null,
-            override val valueView: @Composable ((value: Double) -> Unit)? = null
-        ): Axis
+        interface XAxis: Axis
 
         interface YAxis: Axis {
             val offset: DpOffset
+            val minValue: Double?
+            val maxValue: Double?
         }
 
         sealed interface Value {
@@ -77,33 +70,15 @@ class GridChartData {
             val customization: DividerCustomization
         )
 
-        class DividerCustomization {
-            val brush: Brush
-            val thickness: Dp
-            val cap: StrokeCap
-            val pathEffect: PathEffect?
-            @FloatRange val alpha: Float
-            val colorFilter: ColorFilter?
-            val blendMode: BlendMode
-
-            constructor(
-                brush: Brush,
-                thickness: Dp = 2.dp,
-                cap: StrokeCap = Stroke.DefaultCap,
-                pathEffect: PathEffect? = null,
-                @FloatRange alpha: Float = 1f,
-                colorFilter: ColorFilter? = null,
-                blendMode: BlendMode = DefaultBlendMode,
-            ) {
-                this.brush = brush
-                this.thickness = thickness
-                this.cap = cap
-                this.pathEffect = pathEffect
-                this.alpha = alpha
-                this.colorFilter = colorFilter
-                this.blendMode = blendMode
-            }
-
+        data class DividerCustomization(
+            val brush: Brush,
+            val thickness: Dp = 2.dp,
+            val cap: StrokeCap = Stroke.DefaultCap,
+            val pathEffect: PathEffect? = null,
+            @FloatRange val alpha: Float = 1f,
+            val colorFilter: ColorFilter? = null,
+            val blendMode: BlendMode = DefaultBlendMode
+        ) {
             constructor(
                 color: Color,
                 thickness: Dp = 2.dp,

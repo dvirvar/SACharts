@@ -43,7 +43,7 @@ internal fun AxisColumn(
                 // Position item on the screen
                 val yOffset = (constraints.maxHeight * canvasScale - (((values[index] - minYValue).value / yRange) * scaledCanvasHeight + scaledCanvasOffset))
                 if (yOffset >= 0.0 && yOffset <= maxHeightTolerance) {
-                    val y = (yOffset - (placeable.height / 2.0)).fastRoundToInt()
+                    val y = (yOffset - (placeable.height / 2f)).fastRoundToInt()
                     if (leftAxis) {
                         placeable.placeRelative(x = maxWidth - placeable.width, y = y)
                     } else {
@@ -83,7 +83,7 @@ internal fun AxisColumn(
                 // Position item on the screen
                 val yOffset = values[index].toChartPixelCoordinate(constraints.maxHeight, minYValue, maxYValue, true).value
                 if (yOffset >= 0.0 && yOffset <= maxHeightTolerance) {
-                    val y = (yOffset - (placeable.height / 2.0)).fastRoundToInt()
+                    val y = (yOffset - (placeable.height / 2f)).fastRoundToInt()
                     if (leftAxis) {
                         placeable.placeRelative(x = maxWidth - placeable.width, y = y)
                     } else {

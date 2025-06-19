@@ -1,255 +1,29 @@
 package com.skellyapps.charts
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.referentialEqualityPolicy
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.DpOffset
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastRoundToInt
-import com.skellyapps.charts.common.model.ChartValue
-import com.skellyapps.charts.common.model.ChartValueCoordinate
-import com.skellyapps.charts.common.model.GridChartData
-import com.skellyapps.charts.common.model.Position
-import com.skellyapps.charts.common.model.Zoom
-import com.skellyapps.charts.line.model.LineChartData
-import com.skellyapps.charts.line.view.LineChart
-import com.skellyapps.charts.line.view.LineChartRealZoom
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.skellyapps.charts.example.screen.LineChartExamplesScreen
+import com.skellyapps.charts.example.screen.MainScreen
+import com.skellyapps.charts.example.screen.Screen
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlin.math.max
-import kotlin.math.pow
-import kotlin.random.Random
-
-private const val blueTag = 0.toByte()
-private const val yellowTag = 1.toByte()
-private const val greenTag = 2.toByte()
-private const val redTag = 3.toByte()
-private val colors = listOf(Color.Blue, Color.Yellow, Color.Green, Color.Red)
-private val blueLine = LineChartData.Line(
-    (1..12).map { ChartValue(it * Random.nextInt(5, 15).toDouble(), Random.nextDouble(0.0, 300.0)) }.sortedBy { it.x.value }.toMutableStateList(),
-    LineChartData.Line.PointsOrder.Ordered.X,
-    blueTag,
-    LineChartData.Line.Customization(colors[blueTag.toInt()], join = StrokeJoin.Round)
-)
-private val yellowLine = LineChartData.Line(
-    (1..8).map { ChartValue(it * Random.nextInt(5, 15).toDouble(), Random.nextDouble(0.0, 100.0)) }.sortedBy { it.x.value }.toMutableStateList(),
-    LineChartData.Line.PointsOrder.Ordered.X,
-    yellowTag,
-    LineChartData.Line.Customization(colors[yellowTag.toInt()], join = StrokeJoin.Round)
-)
-private val greenLine = LineChartData.Line(
-    (1..5).map { ChartValue(it * Random.nextInt(5, 20).toDouble(), Random.nextDouble(0.0, 100.0)) }.sortedBy { it.x.value }.toMutableStateList(),
-    LineChartData.Line.PointsOrder.Ordered.X,
-    greenTag,
-    LineChartData.Line.Customization(colors[greenTag.toInt()], join = StrokeJoin.Round)
-)
-private val leftAxis = LineChartData.YAxis(
-    lines = mutableListOf(blueLine, yellowLine, greenLine),
-    value = GridChartData.Axis.Value.Step(20.0),
-    gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(color = Color.Gray, thickness = 1.dp, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))),
-    dividerCustomization = GridChartData.Axis.DividerCustomization(color = Color.Black, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))) { value ->
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(value.roundToDecimals(1).toString())
-        HorizontalDivider(Modifier.width(8.dp))
-    }
-}
-private val redLine = LineChartData.Line(
-    (0..17).map { ChartValue(it * 10.0, Random.nextDouble(0.0, 100.0)) }.toMutableStateList(),
-    LineChartData.Line.PointsOrder.Unordered,
-    redTag,
-    LineChartData.Line.Customization(colors[redTag.toInt()], join = StrokeJoin.Round)
-)
-private val rightAxis = LineChartData.YAxis(
-    lines = mutableListOf(redLine),
-    value = GridChartData.Axis.Value.Step(20.0),
-    dividerCustomization = GridChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        HorizontalDivider(Modifier.width(8.dp))
-        Text(value.roundToDecimals(1).toString())
-    }
-}
-private val bottomAxis = GridChartData.Axis.XAxis(
-    0.0,
-    200.0,
-    GridChartData.Axis.Value.Fixed(8),
-    GridChartData.Axis.GridLines(false, false, GridChartData.Axis.DividerCustomization(color = Color.Gray, 1.dp)),
-    GridChartData.Axis.DividerCustomization(color = Color.Black)) { value ->
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        VerticalDivider(Modifier.height(8.dp))
-        Text(value.roundToDecimals(1).toString())
-    }
-}
-
-private val lines = listOf(blueLine, yellowLine, greenLine, redLine)
-
-private val pointClick = LineChartData.PointClick(
-    isPointInRange = { point, press ->
-        (press - point).getDistance() / this.density <= 15.0
-    },
-    viewPosition = Position.Bottom,
-    viewOffset = DpOffset(0.dp, 5.dp),
-    viewStayInChartBounds = true,
-    view = { lineTag, index ->
-        val lineIndex = lineTag.toInt()
-        val point = lines[lineIndex].points[index]
-        Column(Modifier.width(50.dp).background(colors[lineIndex].copy(.5f), AbsoluteRoundedCornerShape(25)), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(point.x.roundToDecimals(1).toString(), style = MaterialTheme.typography.bodySmall)
-            HorizontalDivider(thickness = 4.dp)
-            Text(point.y.roundToDecimals(1).toString(), style = MaterialTheme.typography.bodySmall)
-        }
-    }
-)
-
-private val pointDrag = LineChartData.PointDrag(isPointInRange = { point, press ->
-    (press - point).getDistance() / this.density <= 15.0
-}, pointDragged = { lineTag, index, newPosition ->
-    lines[lineTag.toInt()].points[index] = newPosition
-})
-private data class Action(val name: String, val action: (LineChartData) -> LineChartData)
-private val actions = listOf(
-    Action("L/R-axis-offset") {
-        it.copy(
-            leftAxis = it.leftAxis?.copy(
-                offset = DpOffset(
-                    Random.nextInt(0, 10).dp,
-                    Random.nextInt(0, 10).dp
-                )
-            ),
-            rightAxis = it.rightAxis?.copy(
-                offset = DpOffset(
-                    Random.nextInt(0, 30).dp,
-                    Random.nextInt(0, 30).dp
-                )
-            )
-        )
-    },
-    Action("X-axis-offset") {
-        it.copy(
-            xAxisOffset = DpOffset(
-                Random.nextInt(0, 30).dp,
-                Random.nextInt(0, 30).dp
-            )
-        )
-    },
-)
 
 @Composable
 @Preview
 fun App() {
     MaterialTheme {
-        var chartData by remember {
-            mutableStateOf(
-                LineChartData(
-                    leftAxis = leftAxis,
-                    rightAxis = rightAxis,
-                    bottomAxis = bottomAxis,
-                ),
-                referentialEqualityPolicy()
-            )
-        }
-        var zoom by remember { mutableStateOf<Zoom?>(Zoom(0.5f, 5f)) }
-        val textMeasurer = rememberTextMeasurer()
-        Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-            LazyRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                items(actions) {
-                    Button({chartData = it.action(chartData)}) {
-                        Text(it.name)
-                    }
-                }
+        val navController = rememberNavController()
+        NavHost(navController, Screen.Main, Modifier.fillMaxSize()) {
+            composable<Screen.Main> {
+                MainScreen(navController)
             }
-            LineChartRealZoom(
-                Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp, bottom = 2.dp),
-                chartData,
-                zoom,
-                { canvasSize, lineTag, index, offset ->
-                    drawCircle(
-                        colors[lineTag.toInt()],
-                        5.dp.toPx(),
-                        offset
-                    )
-                    val point = lines[lineTag.toInt()].points[index]
-                    val xValue = point.x.roundToDecimals(1)
-                    val yValue = point.y.roundToDecimals(1)
-                    val text = "$xValue|$yValue"
-                    val layout = textMeasurer.measure(text)
-                    val x = offset.x.coerceIn(layout.size.width / 2f, canvasSize.width - layout.size.width / 2) - layout.size.width / 2
-                    val topLeftOffset = Offset(x, max(offset.y - layout.size.height, 0f))
-                    drawText(
-                        layout,
-                        topLeft = topLeftOffset
-                    )
-                },
-                pointClick,
-                pointDrag
-            )
-            LineChart(
-                Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp, bottom = 2.dp),
-                chartData,
-                zoom,
-                { canvasSize, lineTag, index, offset ->
-                    val radius = 5.dp.toPx()
-                    if (offset.x < -radius || offset.x > canvasSize.width + radius ||
-                        offset.y < -radius || offset.y > canvasSize.height + radius) {
-                        return@LineChart
-                    }
-                    drawCircle(
-                        colors[lineTag.toInt()],
-                        radius,
-                        offset
-                    )
-                    val point = lines[lineTag.toInt()].points[index]
-                    val xValue = point.x.roundToDecimals(1)
-                    val yValue = point.y.roundToDecimals(1)
-                    val text = "$xValue|$yValue"
-                    val layout = textMeasurer.measure(text)
-                    val x = offset.x.coerceIn(layout.size.width / 2f, canvasSize.width - layout.size.width / 2) - layout.size.width / 2
-                    val topLeftOffset = Offset(x, max(offset.y - layout.size.height, 0f))
-                    drawText(
-                        layout,
-                        topLeft = topLeftOffset
-                    )
-                },
-                pointClick,
-                pointDrag
-            )
+            composable<Screen.LineChartExamples> {
+                LineChartExamplesScreen(navController)
+            }
         }
     }
-}
-
-private fun Double.roundToDecimals(decimals: Int): Double {
-    val divider = 10.0.pow(decimals)
-    return (this * divider).fastRoundToInt() / divider
-}
-
-private fun ChartValueCoordinate.roundToDecimals(decimals: Int): Double {
-    val divider = 10.0.pow(decimals)
-    return (value * divider).fastRoundToInt() / divider
 }
