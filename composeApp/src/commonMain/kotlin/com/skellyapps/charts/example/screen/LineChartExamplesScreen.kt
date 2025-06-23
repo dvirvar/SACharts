@@ -22,13 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.skellyapps.charts.example.onMouseBackButton
-import com.skellyapps.charts.example.view.AxesCustomizationLineChartExample
-import com.skellyapps.charts.example.view.DividerCustomizationLineChartExample
-import com.skellyapps.charts.example.view.FunctionalityLineChartExample
-import com.skellyapps.charts.example.view.GridLineCustomizationLineChartExample
-import com.skellyapps.charts.example.view.LineCustomizationLineChartExample
-import com.skellyapps.charts.example.view.SimpleLineChartExample
-import com.skellyapps.charts.example.view.SimpleTwoAxesLineChartExample
+import com.skellyapps.charts.example.view.line.AxesCustomizationLineChartExample
+import com.skellyapps.charts.example.view.line.DividerCustomizationLineChartExample
+import com.skellyapps.charts.example.view.line.FunctionalityLineChartExample
+import com.skellyapps.charts.example.view.line.GridLineCustomizationLineChartExample
+import com.skellyapps.charts.example.view.line.LineCustomizationLineChartExample
+import com.skellyapps.charts.example.view.line.SimpleLineChartExample
+import com.skellyapps.charts.example.view.line.SimpleTwoAxesLineChartExample
 
 @Composable
 internal fun LineChartExamplesScreen(navController: NavController) {

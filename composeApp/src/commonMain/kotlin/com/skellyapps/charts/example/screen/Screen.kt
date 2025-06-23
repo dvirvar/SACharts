@@ -8,4 +8,6 @@ internal sealed interface Screen {
     object Main: Screen
     @Serializable
     object LineChartExamples: Screen
+    @Serializable
+    object BarChartExamples: Screen
 }

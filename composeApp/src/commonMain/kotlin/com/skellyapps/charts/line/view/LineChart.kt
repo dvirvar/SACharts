@@ -62,7 +62,7 @@ fun LineChart(
     data: LineChartData,
     background: Brush = SolidColor(Color.Transparent),
     zoom: Zoom? = null,
-    onEachPoint: (DrawScope.(canvasSize: Size, lineTag: Int, index: Int, offset: Offset) -> Unit)? = null,
+    drawOnEachPoint: (DrawScope.(canvasSize: Size, lineTag: Int, index: Int, offset: Offset) -> Unit)? = null,
     pointClick: LineChartData.PointClick? = null,
     pointDrag: LineChartData.PointDrag? = null,
     pointDragAfterLongPress: LineChartData.PointDrag? = null,
@@ -473,9 +473,9 @@ fun LineChart(
                         )
                     }
                     //Let the users config what they want on the point
-                    onEachPoint?.let {
+                    drawOnEachPoint?.let {
                         line.offsets.fastForEachIndexed { index, chartPixel ->
-                            onEachPoint(this, size, line.tag, index, chartPixel.offset)
+                            drawOnEachPoint(this, size, line.tag, index, chartPixel.offset)
                         }
                     }
                 }
@@ -512,9 +512,9 @@ fun LineChart(
                         )
                     }
                     //Let the users config what they want on the point
-                    onEachPoint?.let {
+                    drawOnEachPoint?.let {
                         line.offsets.fastForEachIndexed { index, chartPixel ->
-                            onEachPoint(this, size, line.tag, index, chartPixel.offset)
+                            drawOnEachPoint(this, size, line.tag, index, chartPixel.offset)
                         }
                     }
                 }

@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.skellyapps.charts.example.screen.BarChartExamplesScreen
 import com.skellyapps.charts.example.screen.LineChartExamplesScreen
 import com.skellyapps.charts.example.screen.MainScreen
 import com.skellyapps.charts.example.screen.Screen
@@ -23,6 +24,9 @@ fun App() {
             }
             composable<Screen.LineChartExamples> {
                 LineChartExamplesScreen(navController)
+            }
+            composable<Screen.BarChartExamples> {
+                BarChartExamplesScreen(navController)
             }
         }
     }

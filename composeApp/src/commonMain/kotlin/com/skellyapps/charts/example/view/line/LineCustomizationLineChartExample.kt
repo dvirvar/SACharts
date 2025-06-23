@@ -1,4 +1,4 @@
-package com.skellyapps.charts.example.view
+package com.skellyapps.charts.example.view.line
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -10,11 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -25,7 +23,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
@@ -38,10 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
@@ -49,7 +44,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
@@ -345,7 +339,7 @@ fun LineCustomizationLineChartExample() {
         LineChart(
             Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp),
             chartData,
-            onEachPoint = { canvasSize, lineTag, index, offset ->
+            drawOnEachPoint = { canvasSize, lineTag, index, offset ->
                 if (showPoints) {
                     if (lineTag == blueTag) {
                         drawCircle(

@@ -1,4 +1,4 @@
-package com.skellyapps.charts.example.view
+package com.skellyapps.charts.example.view.line
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement

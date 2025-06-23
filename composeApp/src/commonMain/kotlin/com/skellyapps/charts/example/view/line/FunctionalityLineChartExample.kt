@@ -1,4 +1,4 @@
-package com.skellyapps.charts.example.view
+package com.skellyapps.charts.example.view.line
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -171,7 +171,7 @@ fun FunctionalityLineChartExample() {
             chartData,
             background = Brush.linearGradient(colors.map {it.copy(0.25f)}),
             zoom = zoom,
-            onEachPoint = { canvasSize, lineTag, index, offset ->
+            drawOnEachPoint = { canvasSize, lineTag, index, offset ->
                 val radius = 5.dp.toPx()
                 if (offset.x < -radius || offset.x > canvasSize.width + radius ||
                     offset.y < -radius || offset.y > canvasSize.height + radius) {

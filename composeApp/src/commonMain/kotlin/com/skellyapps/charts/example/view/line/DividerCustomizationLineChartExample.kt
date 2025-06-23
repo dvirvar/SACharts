@@ -1,4 +1,4 @@
-package com.skellyapps.charts.example.view
+package com.skellyapps.charts.example.view.line
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -64,14 +64,14 @@ private val blueLine = LineChartData.Line(
 private var leftAxis = LineChartData.YAxis(
     lines = mutableListOf(blueLine),
     value = GridChartData.Axis.Value.Step(20.0),
-    gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp, StrokeCap.Round, PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))),
-    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
+    gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp, StrokeCap.Round)),
+    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black, pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 15f)))) { value ->
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(value.roundToDecimals(1).toString())
         HorizontalDivider(Modifier.width(8.dp))
     }
 }
-private var lastLeftAxisGridLines = leftAxis.gridLines
+private var lastLeftAxisDividerCustomization = leftAxis.dividerCustomization
 private val redLine = LineChartData.Line(
     (0..15).map { ChartValue(it * 8.5, Random.nextDouble(0.0, 150.0)) }.toMutableList(),
     LineChartData.Line.PointsOrder.Ordered.X,
@@ -80,8 +80,7 @@ private val redLine = LineChartData.Line(
 )
 private val rightAxis = LineChartData.YAxis(
     lines = mutableListOf(redLine),
-    value = GridChartData.Axis.Value.Fixed(5),
-    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
+    value = GridChartData.Axis.Value.Fixed(5)) { value ->
     Row(verticalAlignment = Alignment.CenterVertically) {
         HorizontalDivider(Modifier.width(8.dp))
         Text(value.roundToDecimals(1).toString())
@@ -89,8 +88,8 @@ private val rightAxis = LineChartData.YAxis(
 }
 private val bottomAxis = LineChartData.XAxis(
     value = GridChartData.Axis.Value.Fixed(8),
-    gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Brush.verticalGradient(colors), 1.5.dp)),
-    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
+    gridLines = GridChartData.Axis.GridLines(showFirstLine = false, customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
+    dividerCustomization = GridChartData.Axis.DividerCustomization(Brush.horizontalGradient(colors))) { value ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         VerticalDivider(Modifier.height(8.dp))
         Text(value.roundToDecimals(1).toString())
@@ -98,7 +97,7 @@ private val bottomAxis = LineChartData.XAxis(
 }
 
 @Composable
-fun GridLineCustomizationLineChartExample() {
+fun DividerCustomizationLineChartExample() {
     val density = LocalDensity.current
     var chartData by remember {
         mutableStateOf(
@@ -110,53 +109,52 @@ fun GridLineCustomizationLineChartExample() {
             referentialEqualityPolicy()
         )
     }
-    var showLeftAxisGrid by remember { mutableStateOf(true) }
-    LaunchedEffect(showLeftAxisGrid) {
-        val gridLines = if (showLeftAxisGrid) {
-            lastLeftAxisGridLines
+    var showLeftAxisDivider by remember { mutableStateOf(true) }
+    LaunchedEffect(showLeftAxisDivider) {
+        val dividerCustomization = if (showLeftAxisDivider) {
+            lastLeftAxisDividerCustomization
         } else {
-            lastLeftAxisGridLines = leftAxis.gridLines
+            lastLeftAxisDividerCustomization = leftAxis.dividerCustomization
             null
         }
-        leftAxis = leftAxis.copy(gridLines = gridLines)
+        leftAxis = leftAxis.copy(dividerCustomization = dividerCustomization)
         chartData = chartData.copy(leftAxis)
     }
-    var leftAxisGridDashLengthText by remember { mutableStateOf("10") }
-    var leftAxisGridDashSpaceLengthText by remember { mutableStateOf("15") }
-    LaunchedEffect(leftAxisGridDashLengthText, leftAxisGridDashSpaceLengthText) {
+    var leftAxisDividerDashLengthText by remember { mutableStateOf("10") }
+    var leftAxisDividerDashSpaceLengthText by remember { mutableStateOf("15") }
+    LaunchedEffect(leftAxisDividerDashLengthText, leftAxisDividerDashSpaceLengthText) {
         val length = with(density) {
-            (leftAxisGridDashLengthText.toFloatOrNull()?.dp ?: 10.dp).toPx()
+            (leftAxisDividerDashLengthText.toFloatOrNull()?.dp ?: 10.dp).toPx()
         }
         val spaceLength = with(density) {
-            (leftAxisGridDashSpaceLengthText.toFloatOrNull()?.dp ?: 15.dp).toPx()
+            (leftAxisDividerDashSpaceLengthText.toFloatOrNull()?.dp ?: 15.dp).toPx()
         }
         try {
             val pathEffect = PathEffect.dashPathEffect(floatArrayOf(length, spaceLength))
-            leftAxis.gridLines?.customization?.copy(pathEffect = pathEffect)?.let {
-                leftAxis = leftAxis.copy(gridLines = leftAxis.gridLines?.copy(customization = it))
-                chartData = chartData.copy(leftAxis)
-            }
+            val dividerCustomization = leftAxis.dividerCustomization?.copy(pathEffect = pathEffect)
+            leftAxis = leftAxis.copy(dividerCustomization = dividerCustomization)
+            chartData = chartData.copy(leftAxis)
         } catch (e: Exception) {
             println(e)
         }
     }
-    var showRightAxisGrid by remember { mutableStateOf(false) }
-    LaunchedEffect(showRightAxisGrid) {
-        val gridLines = if (showRightAxisGrid) {
-            GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp))
+    var showRightAxisDivider by remember { mutableStateOf(false) }
+    LaunchedEffect(showRightAxisDivider) {
+        val dividerCustomization = if (showRightAxisDivider) {
+            GridChartData.Axis.DividerCustomization(Color.Black)
         } else {
             null
         }
-        chartData = chartData.copy(rightAxis = chartData.rightAxis?.copy(gridLines = gridLines))
+        chartData = chartData.copy(rightAxis = chartData.rightAxis?.copy(dividerCustomization = dividerCustomization))
     }
-    var showBottomAxisGrid by remember { mutableStateOf(true) }
-    LaunchedEffect(showBottomAxisGrid) {
-        val gridLines = if (showBottomAxisGrid) {
-            GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Brush.verticalGradient(colors), 1.5.dp))
+    var showBottomAxisDivider by remember { mutableStateOf(true) }
+    LaunchedEffect(showBottomAxisDivider) {
+        val dividerCustomization = if (showBottomAxisDivider) {
+            GridChartData.Axis.DividerCustomization(Brush.horizontalGradient(colors))
         } else {
             null
         }
-        chartData = chartData.copy(bottomAxis = chartData.bottomAxis?.copy(gridLines = gridLines))
+        chartData = chartData.copy(bottomAxis = chartData.bottomAxis?.copy(dividerCustomization = dividerCustomization))
     }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
@@ -164,28 +162,28 @@ fun GridLineCustomizationLineChartExample() {
             Column {
                 Text("Left axis", style = MaterialTheme.typography.titleSmall)
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Row(Modifier.toggleable(showLeftAxisGrid, role = Role.Checkbox) { showLeftAxisGrid = it }, verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(showLeftAxisGrid, null)
-                        Text("Show grid")
+                    Row(Modifier.toggleable(showLeftAxisDivider, role = Role.Checkbox) { showLeftAxisDivider = it }, verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(showLeftAxisDivider, null)
+                        Text("Show divider")
                     }
-                    if (showLeftAxisGrid) {
+                    if (showLeftAxisDivider) {
                         OutlinedTextField(
-                            leftAxisGridDashLengthText,
+                            leftAxisDividerDashLengthText,
                             {
                                 if (it.isEmpty() || it.toFloatOrNull() != null) {
-                                    leftAxisGridDashLengthText = it
+                                    leftAxisDividerDashLengthText = it
                                 }
                             },
                             Modifier.onPreviewKeyEvent {
                                 if (it.type == KeyEventType.KeyDown) {
                                     if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                        var r = (leftAxisGridDashLengthText.toFloatOrNull() ?: 10f)
+                                        var r = (leftAxisDividerDashLengthText.toFloatOrNull() ?: 10f)
                                         if (it.key == Key.DirectionUp) {
                                             r += 1f
                                         } else {
                                             r = max(r - 1f, 0f)
                                         }
-                                        leftAxisGridDashLengthText = r.toString()
+                                        leftAxisDividerDashLengthText = r.toString()
                                         true
                                     } else {
                                         false
@@ -201,22 +199,22 @@ fun GridLineCustomizationLineChartExample() {
                         )
                         Spacer(Modifier.width(4.dp))
                         OutlinedTextField(
-                            leftAxisGridDashSpaceLengthText,
+                            leftAxisDividerDashSpaceLengthText,
                             {
                                 if (it.isEmpty() || it.toFloatOrNull() != null) {
-                                    leftAxisGridDashSpaceLengthText = it
+                                    leftAxisDividerDashSpaceLengthText = it
                                 }
                             },
                             Modifier.onPreviewKeyEvent {
                                 if (it.type == KeyEventType.KeyDown) {
                                     if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                        var r = (leftAxisGridDashSpaceLengthText.toFloatOrNull() ?: 15f)
+                                        var r = (leftAxisDividerDashSpaceLengthText.toFloatOrNull() ?: 15f)
                                         if (it.key == Key.DirectionUp) {
                                             r += 1f
                                         } else {
                                             r = max(r -1f, 0f)
                                         }
-                                        leftAxisGridDashSpaceLengthText = r.toString()
+                                        leftAxisDividerDashSpaceLengthText = r.toString()
                                         true
                                     } else {
                                         false
@@ -237,9 +235,9 @@ fun GridLineCustomizationLineChartExample() {
                 Text("Right axis", style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.weight(1f))
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Row(Modifier.toggleable(showRightAxisGrid, role = Role.Checkbox) { showRightAxisGrid = it }, verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(showRightAxisGrid, null)
-                        Text("Show grid")
+                    Row(Modifier.toggleable(showRightAxisDivider, role = Role.Checkbox) { showRightAxisDivider = it }, verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(showRightAxisDivider, null)
+                        Text("Show divider")
                     }
                 }
             }
@@ -247,9 +245,9 @@ fun GridLineCustomizationLineChartExample() {
                 Text("Bottom axis", style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.weight(1f))
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Row(Modifier.toggleable(showBottomAxisGrid, role = Role.Checkbox) { showBottomAxisGrid = it }, verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(showBottomAxisGrid, null)
-                        Text("Show grid")
+                    Row(Modifier.toggleable(showBottomAxisDivider, role = Role.Checkbox) { showBottomAxisDivider = it }, verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(showBottomAxisDivider, null)
+                        Text("Show divider")
                     }
                 }
             }
