@@ -24,6 +24,7 @@ data class BarChartData(
 ) {
     data class Category(
         val values: MutableList<ChartValueCoordinate>,
+        val tag: Int,
         val customization: Customization
     ) {
         data class Customization(
@@ -62,6 +63,7 @@ data class BarChartData(
 
     internal data class OffsetCategory(
         val offsets: List<Offset>,
+        val tag: Int,
         val customization: Category.Customization
     ) {
         internal data class Offset(
@@ -72,12 +74,10 @@ data class BarChartData(
     }
 
     data class XAxis(
-        override val gridLines: GridChartData.Axis.GridLines?,
-        override val dividerCustomization: GridChartData.Axis.DividerCustomization?,
-        override val valueView: @Composable ((Double) -> Unit)?
-    ): GridChartData.Axis.XAxis {
-        override val value: GridChartData.Axis.Value = GridChartData.Axis.Value.Step(1.0)
-    }
+        override val gridLines: GridChartData.Axis.GridLines? = null,
+        override val dividerCustomization: GridChartData.Axis.DividerCustomization? = null,
+        val valueView: @Composable ((index: Int) -> Unit)? = null
+    ): GridChartData.Axis.XAxis
 
     data class YAxis(
         val categories: MutableList<Category>,
@@ -85,9 +85,9 @@ data class BarChartData(
         override val offset: DpOffset = DpOffset.Zero,
         override val minValue: Double? = null,
         override val maxValue: Double? = null,
-        override val value: GridChartData.Axis.Value,
-        override val gridLines: GridChartData.Axis.GridLines?,
-        override val dividerCustomization: GridChartData.Axis.DividerCustomization?,
-        override val valueView: @Composable ((Double) -> Unit)?
+        override val gridLines: GridChartData.Axis.GridLines? = null,
+        override val dividerCustomization: GridChartData.Axis.DividerCustomization? = null,
+        val value: GridChartData.Axis.Value,
+        val valueView: @Composable ((Double) -> Unit)? = null
     ): GridChartData.Axis.YAxis
 }

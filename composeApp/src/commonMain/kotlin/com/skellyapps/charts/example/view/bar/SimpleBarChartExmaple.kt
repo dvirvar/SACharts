@@ -35,6 +35,7 @@ import kotlin.random.Random
 
 private val blueCategory = BarChartData.Category(
     (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
+    0,
     BarChartData.Category.Customization(Color.Blue, topLeftCornerRadius = CornerRadius(5f), topRightCornerRadius = CornerRadius(5f)),
 )
 
@@ -64,7 +65,7 @@ private val bottomAxis = BarChartData.XAxis(
     GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         VerticalDivider(Modifier.height(8.dp))
-        Text(value.roundToDecimals(1).toString())
+        Text(value.toString())
     }
 }
 

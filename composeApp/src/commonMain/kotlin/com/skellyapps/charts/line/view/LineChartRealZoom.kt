@@ -49,7 +49,6 @@ import com.skellyapps.charts.common.model.Zoom
 import com.skellyapps.charts.common.view.AxisColumn
 import com.skellyapps.charts.common.view.AxisRow
 import com.skellyapps.charts.common.view.GridChartCanvas
-import com.skellyapps.charts.common.view.axesZIndex
 import com.skellyapps.charts.line.extension.getClosestIndexDistance
 import com.skellyapps.charts.line.extension.getMaxX
 import com.skellyapps.charts.line.extension.getMaxY
@@ -59,6 +58,8 @@ import com.skellyapps.charts.line.extension.toOffsetLines
 import com.skellyapps.charts.line.model.ClickedPoint
 import com.skellyapps.charts.line.model.DraggedPoint
 import com.skellyapps.charts.line.model.LineChartData
+
+private const val axesZIndex = -1f
 
 @Composable
 fun LineChartRealZoom(

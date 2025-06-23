@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.view.BarChart
@@ -34,6 +36,7 @@ import kotlin.random.Random
 
 private val blueCategory = BarChartData.Category(
     (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
+    0,
     BarChartData.Category.Customization(Color.Blue, topLeftCornerRadius = CornerRadius(5f), topRightCornerRadius = CornerRadius(5f)),
 )
 
@@ -56,23 +59,25 @@ private val bottomAxis = BarChartData.XAxis(
     GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         VerticalDivider(Modifier.height(8.dp))
-        Text(value.roundToDecimals(1).toString())
+        Text(value.toString())
     }
 }
 
 private var currentColor = 0
-private val colors = listOf(Color.Blue, Color.Red, Color.Magenta, Color.Cyan)
+private val colors = listOf(Color.Blue, Color.Red, Color.Magenta, Color.DarkGray)
 
 private fun generateCategory(): BarChartData.Category {
     ++currentColor
     return BarChartData.Category(
         (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
+        currentColor,
         BarChartData.Category.Customization(colors[currentColor], topLeftCornerRadius = CornerRadius(5f), topRightCornerRadius = CornerRadius(5f)),
     )
 }
 
 @Composable
 fun GroupedBarChartExample() {
+    val textMeasurer = rememberTextMeasurer()
     var chartData by remember {
         mutableStateOf(
             BarChartData(
@@ -107,6 +112,18 @@ fun GroupedBarChartExample() {
         BarChart(
             Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp, end = 24.dp),
             chartData,
-        )
+        ) { canvasSize, categoryTag, index, topLeft, barSize ->
+            val value = yAxis.categories[categoryTag].values[index].value
+            val isNegative = value < 0.0
+            val text = value.roundToDecimals(1).toString()
+            val layout = textMeasurer.measure(text)
+            val y = if (isNegative) {
+                topLeft.y + barSize.height
+            } else {
+                topLeft.y - layout.size.height
+            }.coerceIn(0f, canvasSize.height - layout.size.height)
+            val topLeft = topLeft.copy(topLeft.x + barSize.width / 2f - layout.size.width / 2f, y)
+            drawText(layout, Color.Black, topLeft)
+        }
     }
 }

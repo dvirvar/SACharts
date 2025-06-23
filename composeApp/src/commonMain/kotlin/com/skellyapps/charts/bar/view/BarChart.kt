@@ -1,7 +1,11 @@
 package com.skellyapps.charts.bar.view
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -21,6 +25,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastFilter
@@ -33,11 +38,13 @@ import com.skellyapps.charts.common.model.ChartPixel
 import com.skellyapps.charts.common.model.ChartPixelCoordinate
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.ChartValueCoordinate
-import com.skellyapps.charts.common.model.Zoom
-import com.skellyapps.charts.common.view.GridChart
+import com.skellyapps.charts.common.view.AxisColumn
+import com.skellyapps.charts.common.view.AxisRow
+import com.skellyapps.charts.common.view.GridChartCanvas
 import com.skellyapps.charts.common.view.dividersZIndex
 import kotlin.math.abs
 
+private const val axesZIndex = -1f
 internal const val barsZIndex = dividersZIndex - 5f
 
 @Composable
@@ -45,7 +52,6 @@ fun BarChart(
     modifier: Modifier,
     data: BarChartData,
     background: Brush = SolidColor(Color.Transparent),
-    zoom: Zoom? = null,
     drawOnEachValue: (DrawScope.(canvasSize: Size, categoryTag: Int, index: Int, topLeft: Offset, barSize: Size) -> Unit)? = null
 ) {
     val density = LocalDensity.current
@@ -129,8 +135,12 @@ fun BarChart(
             data.yAxis.value.getValues(yAxisMinValue, yAxisMaxValue)
         }
     }
-    val categoriesSpace = with(density) {
-        data.yAxis.type.categoriesSpace.toPx()
+    val categoriesSpace by remember(data.yAxis.type.categoriesSpace) {
+        derivedStateOf {
+            with(density) {
+                data.yAxis.type.categoriesSpace.toPx()
+            }
+        }
     }
     val categoryWidth by remember(canvasSize.width, maxXValue, xAxisOffset, data.yAxis.type) {
         derivedStateOf {
@@ -193,7 +203,7 @@ fun BarChart(
                                 }
                                 offsets.add(BarChartData.OffsetCategory.Offset(ChartPixel(Offset(xPixel, yPixel)), Size(barWidth, abs(baseValueYPixel - valueYPixel)), isNegative))
                             }
-                            offsetCategories.add(BarChartData.OffsetCategory(offsets, data.yAxis.categories[categoryIndex].customization))
+                            offsetCategories.add(BarChartData.OffsetCategory(offsets, data.yAxis.categories[categoryIndex].tag, data.yAxis.categories[categoryIndex].customization))
                         }
                     }
                     is BarChartData.Type.Stacked -> {
@@ -204,7 +214,7 @@ fun BarChart(
                             val valueYPixel = value.toChartPixelCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, true).value
                             offsets.add(BarChartData.OffsetCategory.Offset(ChartPixel(Offset(xPixel, valueYPixel)), Size(barWidth, baseValueYPixel - valueYPixel), false))
                         }
-                        offsetCategories.add(BarChartData.OffsetCategory(offsets, data.yAxis.categories[0].customization))
+                        offsetCategories.add(BarChartData.OffsetCategory(offsets, data.yAxis.categories[0].tag, data.yAxis.categories[0].customization))
                         for (categoryIndex in 1..<data.yAxis.categories.size) {
                             val offsets = mutableListOf<BarChartData.OffsetCategory.Offset>()
                             data.yAxis.categories[categoryIndex].values.fastForEachIndexed { index, value ->
@@ -220,7 +230,7 @@ fun BarChart(
                                 val lastValueYPixel = lastValue.toChartPixelCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, true).value
                                 offsets.add(BarChartData.OffsetCategory.Offset(ChartPixel(Offset(xPixel, currentValueYPixel)), Size(barWidth, lastValueYPixel - currentValueYPixel), false))
                             }
-                            offsetCategories.add(BarChartData.OffsetCategory(offsets, data.yAxis.categories[categoryIndex].customization))
+                            offsetCategories.add(BarChartData.OffsetCategory(offsets, data.yAxis.categories[categoryIndex].tag, data.yAxis.categories[categoryIndex].customization))
                         }
                     }
                 }
@@ -229,49 +239,98 @@ fun BarChart(
         }
     }
 
-    GridChart(
-        modifier,
-        background,
-        if (data.isLeftYAxis) data.yAxis else null,
-        if (!data.isLeftYAxis) data.yAxis else null,
-        data.bottomAxis,
-        if (data.isLeftYAxis) yAxisValues else listOf(),
-        if (!data.isLeftYAxis) yAxisValues else listOf(),
-        bottomAxisValues,
-        if (data.isLeftYAxis) yAxisViewport else ChartValue(0.0, 1.0),
-        if (!data.isLeftYAxis) yAxisViewport else ChartValue(0.0, 1.0),
-        xAxisViewport,
-        {canvasSize = it}
-    ) {
-        Box(Modifier
-            .fillMaxSize()
-            .zIndex(barsZIndex)
-            .clipToBounds()
-            .drawBehind {
-                val path = Path()
-                offsetCategories.fastForEach { category ->
-                    category.offsets.fastForEach {
-                        path.addRoundRect(
-                            RoundRect(
-                                Rect(it.topLeft.offset, it.size),
-                                topLeft = if(it.isNegative) category.customization.bottomLeftCornerRadius else category.customization.topLeftCornerRadius,
-                                topRight = if (it.isNegative) category.customization.bottomRightCornerRadius else category.customization.topRightCornerRadius,
-                                bottomRight = if (it.isNegative) category.customization.topRightCornerRadius else category.customization.bottomRightCornerRadius,
-                                bottomLeft = if (it.isNegative) category.customization.topLeftCornerRadius else category.customization.bottomLeftCornerRadius,
-                            )
-                        )
+    Row(modifier) {
+        if (data.isLeftYAxis) {
+            data.yAxis.let { axis ->
+                axis.valueView?.let {
+                    AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), true, yAxisValues, yAxisViewport.x, yAxisViewport.y) {
+                        yAxisValues.fastForEach { value ->
+                            it(value.value)
+                        }
                     }
-                    drawPath(
-                        path,
-                        category.customization.brush,
-                        category.customization.alpha,
-                        Fill,
-                        category.customization.colorFilter,
-                        category.customization.blendMode
-                    )
-                    path.reset()
                 }
             }
-        )
+        }
+        Column(Modifier.weight(1f)) {
+            GridChartCanvas(
+                Modifier.fillMaxWidth().weight(1f).onSizeChanged {
+                    canvasSize = it
+                }.drawBehind {
+                    drawRect(background)
+                },
+                if (data.isLeftYAxis) data.yAxis else null,
+                if (!data.isLeftYAxis) data.yAxis else null,
+                data.bottomAxis,
+                if (data.isLeftYAxis) yAxisViewport.x else ChartValueCoordinate(0.0),
+                if (data.isLeftYAxis) yAxisViewport.y else ChartValueCoordinate(1.0),
+                if (!data.isLeftYAxis) yAxisViewport.x else ChartValueCoordinate(0.0),
+                if (!data.isLeftYAxis) yAxisViewport.y else ChartValueCoordinate(1.0),
+                xAxisViewport.x,
+                xAxisViewport.y,
+                if (data.isLeftYAxis) yAxisValues else listOf(),
+                if (!data.isLeftYAxis) yAxisValues else listOf(),
+                bottomAxisValues
+            ) {
+                Box(Modifier
+                    .fillMaxSize()
+                    .zIndex(barsZIndex)
+                    .clipToBounds()
+                    .drawBehind {
+                        val path = Path()
+                        offsetCategories.fastForEach { category ->
+                            category.offsets.fastForEach {
+                                path.addRoundRect(
+                                    RoundRect(
+                                        Rect(it.topLeft.offset, it.size),
+                                        topLeft = if(it.isNegative) category.customization.bottomLeftCornerRadius else category.customization.topLeftCornerRadius,
+                                        topRight = if (it.isNegative) category.customization.bottomRightCornerRadius else category.customization.topRightCornerRadius,
+                                        bottomRight = if (it.isNegative) category.customization.topRightCornerRadius else category.customization.bottomRightCornerRadius,
+                                        bottomLeft = if (it.isNegative) category.customization.topLeftCornerRadius else category.customization.bottomLeftCornerRadius,
+                                    )
+                                )
+                            }
+                            drawPath(
+                                path,
+                                category.customization.brush,
+                                category.customization.alpha,
+                                Fill,
+                                category.customization.colorFilter,
+                                category.customization.blendMode
+                            )
+                            path.reset()
+                        }
+                        drawOnEachValue?.let {
+                            offsetCategories.fastForEach { category ->
+                                category.offsets.fastForEachIndexed { index, offsetCategory ->
+                                    drawOnEachValue(this, size, category.tag, index, offsetCategory.topLeft.offset, offsetCategory.size)
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+            data.bottomAxis?.let { axis ->
+                axis.valueView?.let {
+                    AxisRow(Modifier.fillMaxWidth().zIndex(axesZIndex), bottomAxisValues, xAxisViewport.x, xAxisViewport.y) {
+                        for (i in 0..bottomAxisValues.lastIndex) {
+                            it(i)
+                        }
+                    }
+                }
+            }
+        }
+        if (!data.isLeftYAxis) {
+            data.yAxis.let { axis ->
+                axis.valueView?.let {
+                    AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(
+                        axesZIndex
+                    ), false, yAxisValues, yAxisViewport.x, yAxisViewport.y) {
+                        yAxisValues.fastForEach { value ->
+                            it(value.value)
+                        }
+                    }
+                }
+            }
+        }
     }
 }

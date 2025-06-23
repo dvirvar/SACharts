@@ -18,10 +18,8 @@ import kotlin.jvm.JvmInline
 
 class GridChartData {
     sealed interface Axis {
-        val value: Value
         val gridLines: GridLines?
         val dividerCustomization: DividerCustomization?
-        val valueView: @Composable ((value: Double) -> Unit)?
 
         interface XAxis: Axis
 

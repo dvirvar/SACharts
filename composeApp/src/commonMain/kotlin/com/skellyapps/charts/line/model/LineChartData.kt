@@ -170,10 +170,10 @@ data class LineChartData(
      data class XAxis(
          val minValue: Double? = null,
          val maxValue: Double? = null,
-         override val value: GridChartData.Axis.Value,
          override val gridLines: GridChartData.Axis.GridLines? = null,
          override val dividerCustomization: GridChartData.Axis.DividerCustomization? = null,
-         override val valueView: @Composable ((value: Double) -> Unit)? = null,
+         val value: GridChartData.Axis.Value,
+         val valueView: @Composable ((value: Double) -> Unit)? = null,
      ): GridChartData.Axis.XAxis
 
     data class YAxis(
@@ -181,10 +181,10 @@ data class LineChartData(
         override val offset: DpOffset = DpOffset.Zero,
         override val minValue: Double? = null,
         override val maxValue: Double? = null,
-        override val value: GridChartData.Axis.Value,
         override val gridLines: GridChartData.Axis.GridLines? = null,
         override val dividerCustomization: GridChartData.Axis.DividerCustomization? = null,
-        override val valueView: @Composable ((value: Double) -> Unit)? = null,
+        val value: GridChartData.Axis.Value,
+        val valueView: @Composable ((value: Double) -> Unit)? = null,
     ): GridChartData.Axis.YAxis
 
     class PointClick(
