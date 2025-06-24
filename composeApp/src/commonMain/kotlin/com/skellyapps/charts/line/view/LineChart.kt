@@ -263,7 +263,7 @@ fun LineChart(
     Row(modifier) {
         data.leftAxis?.let { axis ->
             axis.valueView?.let {
-                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), true, leftAxisValues, leftAxisYViewport.x, leftAxisYViewport.y) {
+                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), true, leftAxisValues, leftAxisYViewport.x, leftAxisYViewport.y, true) {
                     leftAxisValues.fastForEach { value ->
                         it(value.value)
                     }
@@ -559,7 +559,7 @@ fun LineChart(
             }
             data.bottomAxis?.let { axis ->
                 axis.valueView?.let {
-                    AxisRow(Modifier.fillMaxWidth().zIndex(axesZIndex), bottomAxisValues, xAxisViewport.x, xAxisViewport.y) {
+                    AxisRow(Modifier.fillMaxWidth().zIndex(axesZIndex), bottomAxisValues, xAxisViewport.x, xAxisViewport.y, false) {
                         bottomAxisValues.fastForEach { value ->
                             it(value.value)
                         }
@@ -569,7 +569,7 @@ fun LineChart(
         }
         data.rightAxis?.let { axis ->
             axis.valueView?.let {
-                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), false, rightAxisValues, rightAxisYViewport.x, rightAxisYViewport.y) {
+                AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), false, rightAxisValues, rightAxisYViewport.x, rightAxisYViewport.y, true) {
                     rightAxisValues.fastForEach { value ->
                         it(value.value)
                     }

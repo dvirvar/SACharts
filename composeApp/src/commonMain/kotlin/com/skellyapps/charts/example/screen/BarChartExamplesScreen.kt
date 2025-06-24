@@ -23,8 +23,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.skellyapps.charts.example.onMouseBackButton
 import com.skellyapps.charts.example.view.bar.GroupedBarChartExample
+import com.skellyapps.charts.example.view.bar.GroupedHorizontalBarChartExample
 import com.skellyapps.charts.example.view.bar.SimpleBarChartExample
+import com.skellyapps.charts.example.view.bar.SimpleHorizontalBarChartExample
 import com.skellyapps.charts.example.view.bar.StackedBarChartExample
+import com.skellyapps.charts.example.view.bar.StackedHorizontalBarChartExample
 
 @Composable
 internal fun BarChartExamplesScreen(navController: NavController) {
@@ -47,21 +50,21 @@ internal fun BarChartExamplesScreen(navController: NavController) {
                     StackedBarChartExample()
                 }
             }
-//            item {
-//                ColumnItem("Divider customization") {
-//                    DividerCustomizationLineChartExample()
-//                }
-//            }
-//            item {
-//                ColumnItem("Axes customization") {
-//                    AxesCustomizationLineChartExample()
-//                }
-//            }
-//            item {
-//                ColumnItem("Chart functionality") {
-//                    FunctionalityLineChartExample()
-//                }
-//            }
+            item {
+                ColumnItem("Simple horizontal bar chart") {
+                    SimpleHorizontalBarChartExample()
+                }
+            }
+            item {
+                ColumnItem("Grouped horizontal bar chart") {
+                    GroupedHorizontalBarChartExample()
+                }
+            }
+            item {
+                ColumnItem("Stacked horizontal bar chart") {
+                    StackedHorizontalBarChartExample()
+                }
+            }
         }
     }
 }

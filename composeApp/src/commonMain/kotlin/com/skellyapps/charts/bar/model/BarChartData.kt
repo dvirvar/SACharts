@@ -82,12 +82,13 @@ data class BarChartData(
     data class YAxis(
         val categories: MutableList<Category>,
         val type: Type,
-        override val offset: DpOffset = DpOffset.Zero,
         override val minValue: Double? = null,
         override val maxValue: Double? = null,
         override val gridLines: GridChartData.Axis.GridLines? = null,
         override val dividerCustomization: GridChartData.Axis.DividerCustomization? = null,
         val value: GridChartData.Axis.Value,
         val valueView: @Composable ((Double) -> Unit)? = null
-    ): GridChartData.Axis.YAxis
+    ): GridChartData.Axis.YAxis {
+        override val offset: DpOffset = DpOffset.Zero
+    }
 }

@@ -1,7 +1,6 @@
 package com.skellyapps.charts.common.model
 
 import androidx.annotation.FloatRange
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color

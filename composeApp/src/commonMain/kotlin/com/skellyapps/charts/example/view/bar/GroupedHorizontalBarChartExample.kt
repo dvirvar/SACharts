@@ -22,43 +22,45 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.bar.model.BarChartData
-import com.skellyapps.charts.bar.view.BarChart
+import com.skellyapps.charts.bar.model.HorizontalBarChartData
+import com.skellyapps.charts.bar.view.HorizontalBarChart
 import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.example.roundToDecimals
 import kotlin.random.Random
 
 private val blueCategory = BarChartData.Category(
-    (0..12).map { ChartValueCoordinate(Random.nextDouble(6.0, 30.0)) }.toMutableList(),
+    (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
     0,
-    BarChartData.Category.Customization(Color.Blue),
+    BarChartData.Category.Customization(Color.Blue, topRightCornerRadius = CornerRadius(5f), bottomRightCornerRadius = CornerRadius(5f)),
 )
 
-private val yAxis = BarChartData.YAxis(
+private val bottomAxis = HorizontalBarChartData.XAxis(
     mutableStateListOf(blueCategory),
-    BarChartData.Type.Stacked(10.dp),
-    minValue = 0.0,
-    maxValue = 120.0,
+    BarChartData.Type.Grouped(3.dp, 10.dp),
+    minValue = -30.0,
+    maxValue = 30.0,
     value = GridChartData.Axis.Value.Fixed(15),
     gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
     dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        VerticalDivider(Modifier.height(8.dp))
         Text(value.roundToDecimals(1).toString())
-        HorizontalDivider(Modifier.width(8.dp))
     }
 }
 
-private val bottomAxis = BarChartData.XAxis(
-    GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
-    GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        VerticalDivider(Modifier.height(8.dp))
+private val yAxis = HorizontalBarChartData.YAxis(
+    gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
+    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Text(value.toString())
+        HorizontalDivider(Modifier.width(8.dp))
     }
 }
 
@@ -68,54 +70,61 @@ private val colors = listOf(Color.Blue, Color.Red, Color.Magenta, Color.DarkGray
 private fun generateCategory(): BarChartData.Category {
     ++currentColor
     return BarChartData.Category(
-        (0..12).map { ChartValueCoordinate(Random.nextDouble(6.0, 30.0)) }.toMutableList(),
+        (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
         currentColor,
-        BarChartData.Category.Customization(colors[currentColor]),
+        BarChartData.Category.Customization(colors[currentColor], topRightCornerRadius = CornerRadius(5f), bottomRightCornerRadius = CornerRadius(5f)),
     )
 }
 
 @Composable
-fun StackedBarChartExample() {
+fun GroupedHorizontalBarChartExample() {
     val textMeasurer = rememberTextMeasurer()
     var chartData by remember {
         mutableStateOf(
-            BarChartData(
-                yAxis,
-                true,
+            HorizontalBarChartData(
                 bottomAxis,
+                true,
+                yAxis,
             ),
             referentialEqualityPolicy()
         )
     }
     var addCategoryEnabled by remember { mutableStateOf(true) }
     var removeCategoryEnabled by remember { mutableStateOf(true) }
-    LaunchedEffect(yAxis.categories.size) {
-        addCategoryEnabled = yAxis.categories.size < colors.size
-        removeCategoryEnabled = yAxis.categories.size > 1
+    LaunchedEffect(bottomAxis.categories.size) {
+        addCategoryEnabled = bottomAxis.categories.size < colors.size
+        removeCategoryEnabled = bottomAxis.categories.size > 1
     }
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button({
-                yAxis.categories.add(generateCategory())
+                bottomAxis.categories.add(generateCategory())
             }, enabled = addCategoryEnabled) {
                 Text("Add category")
             }
             Button({
                 --currentColor
-                yAxis.categories.removeLast()
+                bottomAxis.categories.removeLast()
             }, enabled = removeCategoryEnabled) {
                 Text("Remove category")
             }
         }
         Spacer(Modifier.height(8.dp))
-        BarChart(
-            Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp, end = 24.dp),
+        HorizontalBarChart(
+            Modifier.fillMaxWidth().height(600.dp).padding(start = 8.dp, end = 24.dp),
             chartData,
         ) { canvasSize, categoryTag, index, topLeft, barSize ->
-            val text = yAxis.categories[categoryTag].values[index].value.roundToDecimals(1).toString()
+            val value = bottomAxis.categories[categoryTag].values[index].value
+            val isNegative = value < 0.0
+            val text = value.roundToDecimals(1).toString()
             val layout = textMeasurer.measure(text)
-            val topLeft = topLeft.copy(topLeft.x + barSize.width / 2f - layout.size.width / 2f, topLeft.y + barSize.height - layout.size.height)
-            drawText(layout, Color.White, topLeft)
+            val x = if (isNegative) {
+                topLeft.x - layout.size.width
+            } else {
+                topLeft.x + barSize.width
+            }.coerceIn(0f, canvasSize.width - layout.size.width)
+            val topLeft = topLeft.copy(x, topLeft.y + barSize.height / 2f - layout.size.height / 2f)
+            drawText(layout, Color.Black, topLeft)
         }
     }
 }

@@ -62,6 +62,7 @@ internal fun AxisColumn(
     values: List<ChartValueCoordinate>,
     minYValue: ChartValueCoordinate,
     maxYValue: ChartValueCoordinate,
+    inverted: Boolean,
     content: @Composable () -> Unit
 ) {
     Layout(
@@ -81,7 +82,7 @@ internal fun AxisColumn(
             // Place children in the parent layout
             placeables.fastForEachIndexed { index, placeable ->
                 // Position item on the screen
-                val yOffset = values[index].toChartPixelCoordinate(constraints.maxHeight, minYValue, maxYValue, true).value
+                val yOffset = values[index].toChartPixelCoordinate(constraints.maxHeight, minYValue, maxYValue, inverted).value
                 if (yOffset >= 0.0 && yOffset <= maxHeightTolerance) {
                     val y = (yOffset - (placeable.height / 2f)).fastRoundToInt()
                     if (leftAxis) {

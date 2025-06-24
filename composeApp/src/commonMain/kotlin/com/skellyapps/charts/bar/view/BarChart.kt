@@ -58,13 +58,7 @@ fun BarChart(
     var canvasSize by remember { mutableStateOf(IntSize(0,0)) }
     var canvasZoom by remember { mutableStateOf(Offset(1f,1f)) }
     var canvasOffset by remember { mutableStateOf(Offset.Zero) }
-    val yAxisOffset by remember(data.yAxis.offset) {
-        derivedStateOf {
-            with(density) {
-                data.yAxis.offset.let { Offset(it.x.toPx(), it.y.toPx()) }
-            }
-        }
-    }
+    val yAxisOffset = Offset.Zero
     val xAxisOffset by remember(data.xAxisOffset) {
         derivedStateOf {
             with(density) {
@@ -123,7 +117,7 @@ fun BarChart(
             )
         }
     }
-    val yAxisViewport by remember(yAxisOffset, yAxisMinValue, yAxisMaxValue) {
+    val yAxisViewport by remember(yAxisMinValue, yAxisMaxValue) {
         derivedStateOf {
             val y = ChartPixelCoordinate(canvasOffset.y + canvasSize.height.toFloat() / canvasZoom.y).toChartValueCoordinate(canvasSize.height, yAxisOffset, yAxisMinValue, yAxisMaxValue, true)
             val maxY = ChartPixelCoordinate(canvasOffset.y).toChartValueCoordinate(canvasSize.height, yAxisOffset, yAxisMinValue, yAxisMaxValue, true)
@@ -243,7 +237,7 @@ fun BarChart(
         if (data.isLeftYAxis) {
             data.yAxis.let { axis ->
                 axis.valueView?.let {
-                    AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), true, yAxisValues, yAxisViewport.x, yAxisViewport.y) {
+                    AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), true, yAxisValues, yAxisViewport.x, yAxisViewport.y, true) {
                         yAxisValues.fastForEach { value ->
                             it(value.value)
                         }
@@ -311,7 +305,7 @@ fun BarChart(
             }
             data.bottomAxis?.let { axis ->
                 axis.valueView?.let {
-                    AxisRow(Modifier.fillMaxWidth().zIndex(axesZIndex), bottomAxisValues, xAxisViewport.x, xAxisViewport.y) {
+                    AxisRow(Modifier.fillMaxWidth().zIndex(axesZIndex), bottomAxisValues, xAxisViewport.x, xAxisViewport.y, false) {
                         for (i in 0..bottomAxisValues.lastIndex) {
                             it(i)
                         }
@@ -322,9 +316,7 @@ fun BarChart(
         if (!data.isLeftYAxis) {
             data.yAxis.let { axis ->
                 axis.valueView?.let {
-                    AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(
-                        axesZIndex
-                    ), false, yAxisValues, yAxisViewport.x, yAxisViewport.y) {
+                    AxisColumn(Modifier.height(with(density) { canvasSize.height.toDp() }).zIndex(axesZIndex), false, yAxisValues, yAxisViewport.x, yAxisViewport.y, true) {
                         yAxisValues.fastForEach { value ->
                             it(value.value)
                         }

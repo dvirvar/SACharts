@@ -55,6 +55,7 @@ internal fun AxisRow(
     values: List<ChartValueCoordinate>,
     minXValue: ChartValueCoordinate,
     maxXValue: ChartValueCoordinate,
+    inverted: Boolean,
     content: @Composable () -> Unit
 ) {
     Layout(
@@ -74,7 +75,7 @@ internal fun AxisRow(
             // Place children in the parent layout
             placeables.fastForEachIndexed { index, placeable ->
                 // Position item on the screen
-                val xOffset = values[index].toChartPixelCoordinate(constraints.maxWidth, minXValue, maxXValue, false).value
+                val xOffset = values[index].toChartPixelCoordinate(constraints.maxWidth, minXValue, maxXValue, inverted).value
                 if (xOffset >= 0.0 && xOffset <= maxWidthTolerance) {
                     placeable.placeRelative(x = (xOffset - (placeable.width / 2f)).fastRoundToInt(), y = 0)
                 }
