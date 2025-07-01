@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.navigation.NavController
 
-private val exampleScreens = listOf(Screen.LineChartExamples, Screen.BarChartExamples)
+private val exampleScreens = listOf(Screen.LineChartExamples, Screen.BarChartExamples, Screen.PieChartExamples)
 
 @Composable
 fun MainScreen(navController: NavController) {

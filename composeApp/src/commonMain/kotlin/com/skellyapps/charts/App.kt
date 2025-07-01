@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.skellyapps.charts.example.screen.BarChartExamplesScreen
 import com.skellyapps.charts.example.screen.LineChartExamplesScreen
 import com.skellyapps.charts.example.screen.MainScreen
+import com.skellyapps.charts.example.screen.PieChartExamplesScreen
 import com.skellyapps.charts.example.screen.Screen
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -27,6 +28,9 @@ fun App() {
             }
             composable<Screen.BarChartExamples> {
                 BarChartExamplesScreen(navController)
+            }
+            composable<Screen.PieChartExamples> {
+                PieChartExamplesScreen(navController)
             }
         }
     }
