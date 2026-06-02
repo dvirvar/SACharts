@@ -2,6 +2,7 @@
 
 package com.skellyapps.charts.example.view.pie
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Slider
@@ -39,7 +42,7 @@ private val colors = listOf(Color.Blue, Color.Red, Color.Black, Color.Magenta, C
 private fun generateSlice(): PieChartData.Slice {
     ++currentColor
     return PieChartData.Slice(
-        Random.nextDouble(10.0, 30.0),
+        /*Random.nextDouble(10.0, 30.0)*/20.0,
         colors[currentColor]
     )
 }
@@ -50,16 +53,9 @@ fun SimplePieChartExample() {
         mutableStateOf(
             PieChartData(
                 slices,
-                customization = PieChartData.Customization(
-                    PieChartData.Customization.Line(
-                        3.dp,
-                        SolidColor(Color(170,90,170))
-                    ),
-                    PieChartData.Customization.Line(
-                        4.dp,
-                        SolidColor(Color(170,90,170))
-                    )
-                )
+                sliceSpacingDegrees = 10f,
+                innerRadiusPercentage = 0.5f,
+                sliceBorder = PieChartData.Slice.Border(2.dp, Color.Black)
             ),
             referentialEqualityPolicy()
         )
@@ -74,9 +70,13 @@ fun SimplePieChartExample() {
     LaunchedEffect(startAngle) {
         chartData = chartData.copy(startAngle = startAngle)
     }
+    var innerRadiusPercentage by remember { mutableFloatStateOf(chartData.innerRadiusPercentage) }
+    LaunchedEffect(innerRadiusPercentage) {
+        chartData = chartData.copy(innerRadiusPercentage = innerRadiusPercentage)
+    }
     Column(Modifier.fillMaxWidth()) {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp).horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button({
@@ -92,7 +92,22 @@ fun SimplePieChartExample() {
             }
             Column {
                 Text("Start angle: ${startAngle.fastRoundToInt()}")
-                Slider(startAngle, {startAngle = it}, valueRange = 0f..359f, steps = 360)
+                Slider(
+                    startAngle,
+                    {startAngle = it},
+                    Modifier.width(250.dp),
+                    valueRange = 0f..359f,
+                    steps = 360
+                )
+            }
+            Column {
+                Text("Inner radius percentage: ${(innerRadiusPercentage * 100f).fastRoundToInt()}")
+                Slider(
+                    innerRadiusPercentage,
+                    {innerRadiusPercentage = it},
+                    Modifier.width(250.dp),
+                    valueRange = 0f..0.99f
+                )
             }
         }
         Spacer(Modifier.height(8.dp))

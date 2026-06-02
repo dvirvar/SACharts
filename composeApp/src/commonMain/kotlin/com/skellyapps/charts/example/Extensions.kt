@@ -10,6 +10,5 @@ internal fun Double.roundToDecimals(decimals: Int): Double {
 }
 
 internal fun ChartValueCoordinate.roundToDecimals(decimals: Int): Double {
-    val divider = 10.0.pow(decimals)
-    return (value * divider).fastRoundToInt() / divider
+    return value.roundToDecimals(decimals)
 }
