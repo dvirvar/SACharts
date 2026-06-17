@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.skellyapps.charts.example.onMouseBackButton
+import com.skellyapps.charts.example.view.pie.DynamicLabelsPieChartExample
+import com.skellyapps.charts.example.view.pie.SimpleLabelsPieChartExample
 import com.skellyapps.charts.example.view.pie.SimplePieChartExample
 
 @Composable
@@ -35,16 +37,16 @@ internal fun PieChartExamplesScreen(navController: NavController) {
                     SimplePieChartExample()
                 }
             }
-//            item {
-//                ColumnItem("Grouped bar chart") {
-//                    GroupedBarChartExample()
-//                }
-//            }
-//            item {
-//                ColumnItem("Stacked bar chart") {
-//                    StackedBarChartExample()
-//                }
-//            }
+            item {
+                ColumnItem("Simple labels pie chart") {
+                    SimpleLabelsPieChartExample()
+                }
+            }
+            item {
+                ColumnItem("Dynamic labels pie chart") {
+                    DynamicLabelsPieChartExample()
+                }
+            }
         }
     }
 }

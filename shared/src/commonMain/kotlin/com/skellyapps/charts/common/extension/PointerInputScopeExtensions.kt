@@ -23,7 +23,7 @@ suspend fun PointerInputScope.detectTransformGestures(
         centroid: Offset,
         pan: Offset,
         zoom: Float,
-        orienation: Orientation?,
+        orientation: Orientation?,
         type: PointerEventType,
         changes: List<PointerInputChange>
     ) -> Unit,

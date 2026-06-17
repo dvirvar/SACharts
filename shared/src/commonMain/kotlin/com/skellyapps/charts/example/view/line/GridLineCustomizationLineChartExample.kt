@@ -33,21 +33,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
+import com.skellyapps.charts.example.arrowValueStepper
 import com.skellyapps.charts.example.roundToDecimals
 import com.skellyapps.charts.line.model.LineChartData
 import com.skellyapps.charts.line.view.LineChart
-import kotlin.math.max
 import kotlin.random.Random
 
 private const val blueTag = 0
@@ -176,23 +171,8 @@ fun GridLineCustomizationLineChartExample() {
                                     leftAxisGridDashLengthText = it
                                 }
                             },
-                            Modifier.onPreviewKeyEvent {
-                                if (it.type == KeyEventType.KeyDown) {
-                                    if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                        var r = (leftAxisGridDashLengthText.toFloatOrNull() ?: 10f)
-                                        if (it.key == Key.DirectionUp) {
-                                            r += 1f
-                                        } else {
-                                            r = max(r - 1f, 0f)
-                                        }
-                                        leftAxisGridDashLengthText = r.toString()
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                } else {
-                                    false
-                                }
+                            Modifier.arrowValueStepper(leftAxisGridDashLengthText, 10f) {
+                                leftAxisGridDashLengthText = it
                             },
                             label = {Text("Dash length(dp)")},
                             placeholder = {Text("10")},
@@ -207,23 +187,8 @@ fun GridLineCustomizationLineChartExample() {
                                     leftAxisGridDashSpaceLengthText = it
                                 }
                             },
-                            Modifier.onPreviewKeyEvent {
-                                if (it.type == KeyEventType.KeyDown) {
-                                    if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                        var r = (leftAxisGridDashSpaceLengthText.toFloatOrNull() ?: 15f)
-                                        if (it.key == Key.DirectionUp) {
-                                            r += 1f
-                                        } else {
-                                            r = max(r -1f, 0f)
-                                        }
-                                        leftAxisGridDashSpaceLengthText = r.toString()
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                } else {
-                                    false
-                                }
+                            Modifier.arrowValueStepper(leftAxisGridDashSpaceLengthText, 15f) {
+                                leftAxisGridDashSpaceLengthText = it
                             },
                             label = {Text("Dash space length(dp)")},
                             placeholder = {Text("15")},

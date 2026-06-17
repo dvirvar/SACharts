@@ -30,21 +30,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
+import com.skellyapps.charts.example.arrowValueStepper
 import com.skellyapps.charts.example.roundToDecimals
 import com.skellyapps.charts.line.model.LineChartData
 import com.skellyapps.charts.line.view.LineChart
-import kotlin.math.max
 import kotlin.random.Random
 
 private const val blueTag = 0
@@ -222,23 +217,8 @@ fun AxesCustomizationLineChartExample() {
                                 leftAxisMinOffsetText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (leftAxisMinOffsetText.toFloatOrNull() ?: 0f)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1f
-                                    } else {
-                                        r = max(r - 1f, 0f)
-                                    }
-                                    leftAxisMinOffsetText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(leftAxisMinOffsetText, 0f) {
+                            leftAxisMinOffsetText = it
                         },
                         label = {Text("Min offset(dp)")},
                         placeholder = {Text("0")},
@@ -253,23 +233,8 @@ fun AxesCustomizationLineChartExample() {
                                 leftAxisMaxOffsetText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (leftAxisMaxOffsetText.toFloatOrNull() ?: 0f)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1f
-                                    } else {
-                                        r = max(r -1f, 0f)
-                                    }
-                                    leftAxisMaxOffsetText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(leftAxisMaxOffsetText, 0f) {
+                            leftAxisMaxOffsetText = it
                         },
                         label = {Text("Max offset(dp)")},
                         placeholder = {Text("0")},
@@ -284,23 +249,8 @@ fun AxesCustomizationLineChartExample() {
                                 leftAxisValuesStepText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (leftAxisValuesStepText.toDoubleOrNull() ?: 1.0)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1.0
-                                    } else {
-                                        r = max(r -1.0, 1.0)
-                                    }
-                                    leftAxisValuesStepText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(leftAxisValuesStepText, 1.0, 1.0) {
+                            leftAxisValuesStepText = it
                         },
                         label = {Text("Values step")},
                         placeholder = {Text("1")},
@@ -324,23 +274,8 @@ fun AxesCustomizationLineChartExample() {
                                 rightAxisMinOffsetText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (rightAxisMinOffsetText.toFloatOrNull() ?: 0f)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1f
-                                    } else {
-                                        r = max(r - 1f, 0f)
-                                    }
-                                    rightAxisMinOffsetText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(rightAxisMinOffsetText, 0f) {
+                            rightAxisMinOffsetText = it
                         },
                         label = {Text("Min offset(dp)")},
                         placeholder = {Text("0")},
@@ -355,23 +290,8 @@ fun AxesCustomizationLineChartExample() {
                                 rightAxisMaxOffsetText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (rightAxisMaxOffsetText.toFloatOrNull() ?: 0f)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1f
-                                    } else {
-                                        r = max(r -1f, 0f)
-                                    }
-                                    rightAxisMaxOffsetText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(rightAxisMaxOffsetText, 0f) {
+                            rightAxisMaxOffsetText = it
                         },
                         label = {Text("Max offset(dp)")},
                         placeholder = {Text("0")},
@@ -386,23 +306,8 @@ fun AxesCustomizationLineChartExample() {
                                 rightAxisValuesAmountText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (rightAxisValuesAmountText.toUIntOrNull()?.toInt() ?: 0)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1
-                                    } else {
-                                        r = max(r - 1, 1)
-                                    }
-                                    rightAxisValuesAmountText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(rightAxisValuesAmountText, 0U, 1U) {
+                            rightAxisValuesAmountText = it
                         },
                         label = {Text("Values amount")},
                         placeholder = {Text("1")},
@@ -426,23 +331,8 @@ fun AxesCustomizationLineChartExample() {
                                 bottomAxisMinOffsetText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (bottomAxisMinOffsetText.toFloatOrNull() ?: 0f)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1f
-                                    } else {
-                                        r = max(r - 1f, 0f)
-                                    }
-                                    bottomAxisMinOffsetText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(bottomAxisMinOffsetText, 0f) {
+                            bottomAxisMinOffsetText = it
                         },
                         label = {Text("Min offset(dp)")},
                         placeholder = {Text("0")},
@@ -457,23 +347,8 @@ fun AxesCustomizationLineChartExample() {
                                 bottomAxisMaxOffsetText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (bottomAxisMaxOffsetText.toFloatOrNull() ?: 0f)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1f
-                                    } else {
-                                        r = max(r -1f, 0f)
-                                    }
-                                    bottomAxisMaxOffsetText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(bottomAxisMaxOffsetText, 0f) {
+                            bottomAxisMaxOffsetText = it
                         },
                         label = {Text("Max offset(dp)")},
                         placeholder = {Text("0")},
@@ -488,23 +363,8 @@ fun AxesCustomizationLineChartExample() {
                                 bottomAxisValuesAmountText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (bottomAxisValuesAmountText.toUIntOrNull()?.toInt() ?: 0)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1
-                                    } else {
-                                        r = max(r - 1, 1)
-                                    }
-                                    bottomAxisValuesAmountText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(bottomAxisValuesAmountText, 0U, 1U) {
+                            bottomAxisValuesAmountText = it
                         },
                         label = {Text("Values amount")},
                         placeholder = {Text("1")},

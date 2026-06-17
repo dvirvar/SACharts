@@ -123,7 +123,7 @@ data class LineChartData(
         }
         data class Customization(
             val brush: Brush,
-            @param:FloatRange val alpha: Float = 1f,
+            @param:FloatRange(0.0, 1.0) val alpha: Float = 1f,
             val thickness: Dp = 5.dp,
             val miter: Float = Stroke.DefaultMiter,
             val cap: StrokeCap = Stroke.DefaultCap,
@@ -134,7 +134,7 @@ data class LineChartData(
         ) {
             constructor(
                 color: Color,
-                @FloatRange alpha: Float = 1f,
+                @FloatRange(0.0, 1.0) alpha: Float = 1f,
                 thickness: Dp = 5.dp,
                 miter: Float = Stroke.DefaultMiter,
                 cap: StrokeCap = Stroke.DefaultCap,
@@ -146,13 +146,13 @@ data class LineChartData(
         }
         data class FillCustomization(
             val brush: Brush,
-            @param:FloatRange val alpha: Float = 1f,
+            @param:FloatRange(0.0, 1.0) val alpha: Float = 1f,
             val colorFilter: ColorFilter? = null,
             val blendMode: BlendMode = DefaultBlendMode
         ) {
             constructor(
                 color: Color,
-                @FloatRange alpha: Float = 1f,
+                @FloatRange(0.0, 1.0) alpha: Float = 1f,
                 colorFilter: ColorFilter? = null,
                 blendMode: BlendMode = DefaultBlendMode,
             ): this(SolidColor(color), alpha, colorFilter, blendMode)

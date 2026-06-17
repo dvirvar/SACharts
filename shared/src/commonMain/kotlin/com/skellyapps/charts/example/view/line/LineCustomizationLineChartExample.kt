@@ -34,11 +34,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.drawText
@@ -47,6 +42,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
+import com.skellyapps.charts.example.arrowValueStepper
 import com.skellyapps.charts.example.roundToDecimals
 import com.skellyapps.charts.line.model.LineChartData
 import com.skellyapps.charts.line.view.LineChart
@@ -198,23 +194,8 @@ fun LineCustomizationLineChartExample() {
                                     pointsRadiusText = it
                                 }
                             },
-                            Modifier.onPreviewKeyEvent {
-                                if (it.type == KeyEventType.KeyDown) {
-                                    if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                        var r = (pointsRadiusText.toFloatOrNull() ?: 0f)
-                                        if (it.key == Key.DirectionUp) {
-                                            r += 1f
-                                        } else {
-                                            r = max(r -1f, 0f)
-                                        }
-                                        pointsRadiusText = r.toString()
-                                        true
-                                    } else {
-                                        false
-                                    }
-                                } else {
-                                    false
-                                }
+                            Modifier.arrowValueStepper(pointsRadiusText, 0f) {
+                                pointsRadiusText = it
                             },
                             label = {Text("Points radius(dp)")},
                             placeholder = {Text("0")},
@@ -234,23 +215,8 @@ fun LineCustomizationLineChartExample() {
                                 blueLineCornerRadiusText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (blueLineCornerRadiusText.toFloatOrNull() ?: 0f)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1f
-                                    } else {
-                                        r = max(r -1f, 1f)
-                                    }
-                                    blueLineCornerRadiusText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(blueLineCornerRadiusText, 0f, 1f) {
+                            blueLineCornerRadiusText = it
                         },
                         label = {Text("Corner radius(dp)")},
                         placeholder = {Text("1")},
@@ -273,23 +239,8 @@ fun LineCustomizationLineChartExample() {
                                 redLineDashLengthText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (redLineDashLengthText.toFloatOrNull() ?: 10f)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1f
-                                    } else {
-                                        r = max(r -1f, 0f)
-                                    }
-                                    redLineDashLengthText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(redLineDashLengthText, 10f) {
+                            redLineDashLengthText = it
                         },
                         label = {Text("Dash length(dp)")},
                         placeholder = {Text("10")},
@@ -304,23 +255,8 @@ fun LineCustomizationLineChartExample() {
                                 redLineDashSpaceLengthText = it
                             }
                         },
-                        Modifier.onPreviewKeyEvent {
-                            if (it.type == KeyEventType.KeyDown) {
-                                if (it.key == Key.DirectionUp || it.key == Key.DirectionDown) {
-                                    var r = (redLineDashSpaceLengthText.toFloatOrNull() ?: 15f)
-                                    if (it.key == Key.DirectionUp) {
-                                        r += 1f
-                                    } else {
-                                        r = max(r -1f, 0f)
-                                    }
-                                    redLineDashSpaceLengthText = r.toString()
-                                    true
-                                } else {
-                                    false
-                                }
-                            } else {
-                                false
-                            }
+                        Modifier.arrowValueStepper(redLineDashSpaceLengthText, 15f) {
+                            redLineDashSpaceLengthText = it
                         },
                         label = {Text("Dash space length(dp)")},
                         placeholder = {Text("15")},
