@@ -23,13 +23,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.view.BarChart
 import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.common.model.GridChartData
+import com.skellyapps.charts.common.model.Position
 import com.skellyapps.charts.example.roundToDecimals
 import kotlin.random.Random
 
@@ -55,10 +55,10 @@ private val yAxis = BarChartData.YAxis(
 
 private val bottomAxis = BarChartData.XAxis(
     GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
-    GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
+    GridChartData.Axis.DividerCustomization(Color.Black)) { index ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         VerticalDivider(Modifier.height(8.dp))
-        Text(value.toString())
+        Text(index.toString())
     }
 }
 
@@ -114,8 +114,14 @@ fun StackedBarChartExample() {
         ) { canvasSize, categoryTag, index, topLeft, barSize ->
             val text = yAxis.categories[categoryTag].values[index].value.roundToDecimals(1).toString()
             val layout = textMeasurer.measure(text)
-            val topLeft = topLeft.copy(topLeft.x + barSize.width / 2f - layout.size.width / 2f, topLeft.y + barSize.height - layout.size.height)
-            drawText(layout, Color.White, topLeft)
+            drawTextInside(
+                layout,
+                topLeft,
+                barSize,
+                Position.Bottom,
+                false,
+                Color.White,
+            )
         }
     }
 }

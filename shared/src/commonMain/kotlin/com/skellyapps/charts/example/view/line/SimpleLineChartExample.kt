@@ -15,7 +15,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.retain.retain
@@ -39,7 +38,7 @@ private val blueLine = LineChartData.Line(
     LineChartData.Line.Customization(Color.Blue, join = StrokeJoin.Round)
 )
 private val leftAxis = LineChartData.YAxis(
-    lines = mutableStateListOf(blueLine),
+    lines = mutableListOf(blueLine),
     value = GridChartData.Axis.Value.Step(20.0),
     gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
     dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->

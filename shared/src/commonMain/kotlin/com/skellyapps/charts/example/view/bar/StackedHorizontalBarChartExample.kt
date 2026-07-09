@@ -23,7 +23,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.bar.model.BarChartData
@@ -31,6 +30,7 @@ import com.skellyapps.charts.bar.model.HorizontalBarChartData
 import com.skellyapps.charts.bar.view.HorizontalBarChart
 import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.common.model.GridChartData
+import com.skellyapps.charts.common.model.Position
 import com.skellyapps.charts.example.roundToDecimals
 import kotlin.random.Random
 
@@ -56,9 +56,9 @@ private val bottomAxis = HorizontalBarChartData.XAxis(
 
 private val yAxis = HorizontalBarChartData.YAxis(
     gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
-    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
+    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { index ->
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(value.toString())
+        Text(index.toString())
         HorizontalDivider(Modifier.width(8.dp))
     }
 }
@@ -115,8 +115,14 @@ fun StackedHorizontalBarChartExample() {
         ) { canvasSize, categoryTag, index, topLeft, barSize ->
             val text = bottomAxis.categories[categoryTag].values[index].value.roundToDecimals(1).toString()
             val layout = textMeasurer.measure(text)
-            val topLeft = topLeft.copy(topLeft.x + barSize.width / 2f - layout.size.width / 2f, topLeft.y + barSize.height / 2f - layout.size.height / 2f)
-            drawText(layout, Color.White, topLeft)
+            drawTextInside(
+                layout,
+                topLeft,
+                barSize,
+                Position.BottomRight,
+                false,
+                Color.White
+            )
         }
     }
 }

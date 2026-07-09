@@ -39,7 +39,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
@@ -82,9 +81,9 @@ fun SimpleLabelsPieChartExample() {
                 labelCustomization = PieChartData.LabelCustomization(
                     textMeasurer,
                     Color.Black,
+                    2.dp,
+                    2.dp,
                     PieChartData.LineCustomization(
-                        2.dp,
-                        2.dp,
                         6.dp,
                         16.dp,
                         Color.DarkGray,
@@ -126,8 +125,14 @@ fun SimpleLabelsPieChartExample() {
     var edgePaddingText by retain { mutableStateOf("2") }
     LaunchedEffect(edgePaddingText) {
         val edgePadding = (edgePaddingText.toFloatOrNull()?.dp ?: 2.dp)
-        val lc = chartData.labelCustomization!!.lineCustomization.copy(edgePadding = edgePadding)
-        chartData = chartData.copy(labelCustomization = chartData.labelCustomization?.copy(lineCustomization = lc))
+        val lc = chartData.labelCustomization!!.copy(edgePadding = edgePadding)
+        chartData = chartData.copy(labelCustomization = lc)
+    }
+    var textToLinePaddingText by retain { mutableStateOf("2") }
+    LaunchedEffect(textToLinePaddingText) {
+        val linePadding = (textToLinePaddingText.toFloatOrNull()?.dp ?: 2.dp)
+        val lc = chartData.labelCustomization!!.copy(linePadding = linePadding)
+        chartData = chartData.copy(labelCustomization = lc)
     }
     var lineThicknessText by retain { mutableStateOf("2") }
     LaunchedEffect(lineThicknessText) {
@@ -145,12 +150,6 @@ fun SimpleLabelsPieChartExample() {
     LaunchedEffect(shoulderLineLengthText) {
         val shoulderLineLength = (shoulderLineLengthText.toFloatOrNull()?.dp ?: 6.dp)
         val lc = chartData.labelCustomization!!.lineCustomization.copy(shoulderLength = shoulderLineLength)
-        chartData = chartData.copy(labelCustomization = chartData.labelCustomization?.copy(lineCustomization = lc))
-    }
-    var lineToTextPaddingText by retain { mutableStateOf("2") }
-    LaunchedEffect(lineToTextPaddingText) {
-        val lineToTextPadding = (lineToTextPaddingText.toFloatOrNull()?.dp ?: 2.dp)
-        val lc = chartData.labelCustomization!!.lineCustomization.copy(lineToTextPadding = lineToTextPadding)
         chartData = chartData.copy(labelCustomization = chartData.labelCustomization?.copy(lineCustomization = lc))
     }
     Column(Modifier.fillMaxWidth()) {
@@ -225,6 +224,21 @@ fun SimpleLabelsPieChartExample() {
                         singleLine = true
                     )
                     OutlinedTextField(
+                        textToLinePaddingText,
+                        {
+                            if (it.isEmpty() || it.toFloatOrNull() != null) {
+                                textToLinePaddingText = it
+                            }
+                        },
+                        Modifier.arrowValueStepper(textToLinePaddingText, 2f) {
+                            textToLinePaddingText = it
+                        },
+                        label = {Text("Text to line padding(dp)")},
+                        placeholder = {Text("2")},
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true
+                    )
+                    OutlinedTextField(
                         lineThicknessText,
                         {
                             if (it.isEmpty() || it.toFloatOrNull() != null) {
@@ -269,21 +283,6 @@ fun SimpleLabelsPieChartExample() {
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true
                     )
-                    OutlinedTextField(
-                        lineToTextPaddingText,
-                        {
-                            if (it.isEmpty() || it.toFloatOrNull() != null) {
-                                lineToTextPaddingText = it
-                            }
-                        },
-                        Modifier.arrowValueStepper(lineToTextPaddingText, 2f) {
-                            lineToTextPaddingText = it
-                        },
-                        label = {Text("Line to text padding(dp)")},
-                        placeholder = {Text("2")},
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        singleLine = true
-                    )
                 }
             }
         }
@@ -295,24 +294,21 @@ fun SimpleLabelsPieChartExample() {
                 val layout = textMeasurer.measure(
                     slices[sliceTag].value.roundToDecimals(1).toString()
                 )
-                val middlePointX: Float
-                val middlePointY: Float
-                if (slices.size == 1) {
-                    middlePointX = centerX
-                    middlePointY = centerY
-                } else {
-                    val middleRadius = (outerRadius + innerRadius) / 2f
-                    middlePointX = (centerX + middleRadius * cos(middleRad)).toFloat()
-                    middlePointY = (centerY + middleRadius * sin(middleRad)).toFloat()
-                }
-                val x = middlePointX - layout.size.width / 2f
-                val y = middlePointY - layout.size.height / 2f
                 val textColor = if (slices.size == 1) {
                     Color(255,165,0)
                 } else {
                     if (sliceTag <=3) Color.White else Color.Black
                 }
-                drawText(layout, textColor, Offset(x, y))
+                drawTextInMiddle(
+                    layout,
+                    centerX,
+                    centerY,
+                    outerRadius,
+                    innerRadius,
+                    middleRad,
+                    slices.size > 1,
+                    textColor
+                )
                 if (slices.size > 1) {
                     val outerMiddlePointX = (centerX + outerRadius * cos(middleRad)).toFloat()
                     val outerMiddlePointY = (centerY + outerRadius * sin(middleRad)).toFloat()

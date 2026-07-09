@@ -34,10 +34,8 @@ import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
@@ -46,8 +44,6 @@ import com.skellyapps.charts.example.arrowValueStepper
 import com.skellyapps.charts.example.roundToDecimals
 import com.skellyapps.charts.pie.model.PieChartData
 import com.skellyapps.charts.pie.view.PieChart
-import kotlin.math.cos
-import kotlin.math.sin
 import kotlin.random.Random
 
 private val slices = mutableStateListOf(PieChartData.Slice(20.0, Color.Blue, 0))
@@ -218,24 +214,21 @@ fun SimplePieChartExample() {
                 val layout = textMeasurer.measure(
                     slices[sliceTag].value.roundToDecimals(1).toString()
                 )
-                val middlePointX: Float
-                val middlePointY: Float
-                if (slices.size == 1) {
-                    middlePointX = centerX
-                    middlePointY = centerY
-                } else {
-                    val middleRadius = (outerRadius + innerRadius) / 2f
-                    middlePointX = (centerX + middleRadius * cos(middleRad)).toFloat()
-                    middlePointY = (centerY + middleRadius * sin(middleRad)).toFloat()
-                }
-                val x = middlePointX - layout.size.width / 2f
-                val y = middlePointY - layout.size.height / 2f
                 val textColor = if (slices.size == 1) {
                     Color(255,165,0)
                 } else {
                     if (sliceTag <=3) Color.White else Color.Black
                 }
-                drawText(layout, textColor, Offset(x, y))
+                drawTextInMiddle(
+                    layout,
+                    centerX,
+                    centerY,
+                    outerRadius,
+                    innerRadius,
+                    middleRad,
+                    slices.size > 1,
+                    textColor
+                )
             }
         )
     }

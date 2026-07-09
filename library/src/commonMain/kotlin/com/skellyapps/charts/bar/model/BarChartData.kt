@@ -1,0 +1,152 @@
+package com.skellyapps.charts.bar.model
+
+import androidx.annotation.FloatRange
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.DrawScope.Companion.DefaultBlendMode
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import com.skellyapps.charts.common.model.ChartPixel
+import com.skellyapps.charts.common.model.ChartValueCoordinate
+import com.skellyapps.charts.common.model.GridChartData
+
+/**
+ * @param yAxis Y-axis of the bar chart
+ * @param isLeftYAxis True will place y-axis on the left side, false will place on the right side
+ * @param bottomAxis Bottom axis of the bar chart
+ * @param xAxisOffset Padding of the categories from the start(x) and end(y) of the x-axis' viewport
+ */
+data class BarChartData(
+    val yAxis: YAxis,
+    val isLeftYAxis: Boolean,
+    val bottomAxis: XAxis? = null,
+    val xAxisOffset: DpOffset = DpOffset.Zero
+) {
+    /**
+     * Representation of a category in a bar chart
+     *
+     * @param values Mutable list of the [values] that make a category
+     * @param tag To distinguish between categories, mainly for users
+     * @param customization Category customization
+     */
+    data class Category(
+        val values: MutableList<ChartValueCoordinate>,
+        val tag: Int,
+        val customization: Customization
+    ) {
+        /**
+         * Category customization.
+         *
+         * Corner radius is by the direction of the positive values, which makes the negative values look mirrored as it should be.
+         *
+         * @param brush The color or fill to be applied to the category
+         * @param alpha Alpha to be applied to the [brush] from 0.0f to 1.0f representing fully transparent to fully opaque respectively
+         * @param colorFilter ColorFilter to apply to the [brush]
+         * @param blendMode The blending algorithm to apply to the [brush]
+         * @param topLeftCornerRadius Top left corner radius, if value is negative it will be the bottom left corner radius
+         * @param topRightCornerRadius Top right corner radius, if value is negative it will be the bottom right corner radius
+         * @param bottomRightCornerRadius Bottom right corner radius, if value is negative it will be the top right corner radius
+         * @param bottomLeftCornerRadius Bottom left corner radius, if value is negative it will be the top left corner radius
+         */
+        data class Customization(
+            val brush: Brush,
+            @param:FloatRange(0.0, 1.0) val alpha: Float = 1f,
+            val colorFilter: ColorFilter? = null,
+            val blendMode: BlendMode = DefaultBlendMode,
+            val topLeftCornerRadius: CornerRadius = CornerRadius.Zero,
+            val topRightCornerRadius: CornerRadius = CornerRadius.Zero,
+            val bottomRightCornerRadius: CornerRadius = CornerRadius.Zero,
+            val bottomLeftCornerRadius: CornerRadius = CornerRadius.Zero,
+        ) {
+            constructor(
+                color: Color,
+                @FloatRange(0.0, 1.0) alpha: Float = 1f,
+                colorFilter: ColorFilter? = null,
+                blendMode: BlendMode = DefaultBlendMode,
+                topLeftCornerRadius: CornerRadius = CornerRadius.Zero,
+                topRightCornerRadius: CornerRadius = CornerRadius.Zero,
+                bottomRightCornerRadius: CornerRadius = CornerRadius.Zero,
+                bottomLeftCornerRadius: CornerRadius = CornerRadius.Zero,
+            ): this(SolidColor(color), alpha, colorFilter, blendMode, topLeftCornerRadius, topRightCornerRadius, bottomRightCornerRadius, bottomLeftCornerRadius)
+        }
+    }
+
+    /** Category type, [Grouped] or [Stacked].*/
+    sealed interface Type {
+        val categoriesSpace: Dp
+
+        /**
+         * Categories placed next to each other.
+         *
+         * @param barsSpace Space between bars in a group
+         * @param categoriesSpace Space between categories
+         */
+        data class Grouped(
+            val barsSpace: Dp,
+            override val categoriesSpace: Dp
+        ): Type
+
+        /**
+         * Categories placed on each other.
+         *
+         * @param categoriesSpace Space between categories
+         */
+        data class Stacked(
+            override val categoriesSpace: Dp
+        ): Type
+    }
+
+    internal data class OffsetCategory(
+        val offsets: List<Offset>,
+        val tag: Int,
+        val customization: Category.Customization
+    ) {
+        internal data class Offset(
+            val topLeft: ChartPixel,
+            val size: Size,
+            val isNegative: Boolean
+        )
+    }
+    /**
+     * Representation of an x-axis in a bar chart.
+     *
+     * @param gridLines Grid lines settings
+     * @param dividerCustomization Axis divider customization
+     * @param valueView The label view
+     */
+    data class XAxis(
+        override val gridLines: GridChartData.Axis.GridLines? = null,
+        override val dividerCustomization: GridChartData.Axis.DividerCustomization? = null,
+        val valueView: @Composable ((index: Int) -> Unit)? = null
+    ): GridChartData.Axis.XAxis
+    /**
+     * Representation of a y-axis in a bar chart.
+     *
+     * @param categories The categories that connected to this y-axis
+     * @param type Type of the categories
+     * @param minValue Minimum value of this y-axis, if null it will be calculated from the categories on this axis
+     * @param maxValue Maximum value of this y-axis, if null it will be calculated from the categories on this axis
+     * @param gridLines Grid lines settings
+     * @param dividerCustomization Axis divider customization
+     * @param value Axis labels configuration
+     * @param valueView The label view
+     */
+    data class YAxis(
+        val categories: MutableList<Category>,
+        val type: Type,
+        override val minValue: Double? = null,
+        override val maxValue: Double? = null,
+        override val gridLines: GridChartData.Axis.GridLines? = null,
+        override val dividerCustomization: GridChartData.Axis.DividerCustomization? = null,
+        val value: GridChartData.Axis.Value,
+        val valueView: @Composable ((Double) -> Unit)? = null
+    ): GridChartData.Axis.YAxis {
+        override val offset: DpOffset = DpOffset.Zero
+    }
+}

@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.bar.model.BarChartData
@@ -57,9 +56,9 @@ private val bottomAxis = HorizontalBarChartData.XAxis(
 
 private val yAxis = HorizontalBarChartData.YAxis(
     gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
-    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
+    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { index ->
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(value.toString())
+        Text(index.toString())
         HorizontalDivider(Modifier.width(8.dp))
     }
 }
@@ -118,13 +117,15 @@ fun GroupedHorizontalBarChartExample() {
             val isNegative = value < 0.0
             val text = value.roundToDecimals(1).toString()
             val layout = textMeasurer.measure(text)
-            val x = if (isNegative) {
-                topLeft.x - layout.size.width
-            } else {
-                topLeft.x + barSize.width
-            }.coerceIn(0f, canvasSize.width - layout.size.width)
-            val topLeft = topLeft.copy(x, topLeft.y + barSize.height / 2f - layout.size.height / 2f)
-            drawText(layout, Color.Black, topLeft)
+            drawTextOutside(
+                layout,
+                canvasSize,
+                topLeft,
+                barSize,
+                true,
+                isNegative,
+                true
+            )
         }
     }
 }

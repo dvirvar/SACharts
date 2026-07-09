@@ -30,7 +30,7 @@ kotlin {
     wasmJs {
         browser()
     }
-    
+
     android {
        namespace = "com.skellyapps.charts.shared"
        compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -45,20 +45,17 @@ kotlin {
     }
     
     sourceSets {
-        androidMain.dependencies {
-            implementation(libs.compose.uiToolingPreview)
-        }
         commonMain.dependencies {
+            implementation(projects.library)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.androidx.navigation)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
-            implementation(libs.compose.materialIconsExtended)
+            implementation(libs.compose.material.icons.extended)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
-            implementation(libs.compose.uiToolingPreview)
             implementation(libs.kotlinx.serialization.json)
         }
         jsMain.dependencies {

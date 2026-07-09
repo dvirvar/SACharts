@@ -11,17 +11,15 @@ dependencies {
 
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutinesSwing)
-
-    implementation(libs.compose.uiToolingPreview)
 }
 
 compose.desktop {
     application {
-        mainClass = "com.skellyapps.charts.MainKt"
+        mainClass = "com.skellyapps.charts.example.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "com.skellyapps.charts"
+            packageName = "com.skellyapps.charts.example"
             packageVersion = "1.0.0"
         }
     }

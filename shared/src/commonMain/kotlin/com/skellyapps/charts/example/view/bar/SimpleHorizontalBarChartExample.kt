@@ -58,14 +58,14 @@ private val bottomAxis = HorizontalBarChartData.XAxis(
 
 private val yAxis = HorizontalBarChartData.YAxis(
     gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
-    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
+    dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { index ->
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (isLeftAxisState.value) {
-            Text(value.toString())
+            Text(index.toString())
         }
         HorizontalDivider(Modifier.width(8.dp))
         if (!isLeftAxisState.value) {
-            Text(value.toString())
+            Text(index.toString())
         }
     }
 }

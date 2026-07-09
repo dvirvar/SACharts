@@ -20,7 +20,7 @@ import androidx.navigation.NavController
 private val exampleScreens = listOf(Screen.LineChartExamples, Screen.BarChartExamples, Screen.PieChartExamples)
 
 @Composable
-fun MainScreen(navController: NavController) {
+internal fun MainScreen(navController: NavController) {
     Scaffold(Modifier.fillMaxSize(), {
         TopAppBar({Text(Screen.Main.name)})
     }) {

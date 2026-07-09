@@ -21,12 +21,9 @@ import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
@@ -184,10 +181,10 @@ fun FunctionalityLineChartExample() {
                         offset
                     )
                 } else {
-                    drawRect(
+                    drawSquare(
                         colors[lineTag],
-                        offset - Offset(radius, radius),
-                        Size(radius * 2f, radius * 2f)
+                        offset,
+                        radius * 2f
                     )
                 }
                 val point = lines[lineTag].points[index]
@@ -195,11 +192,12 @@ fun FunctionalityLineChartExample() {
                 val yValue = point.y.roundToDecimals(1)
                 val text = "X:$xValue\nY:$yValue"
                 val layout = textMeasurer.measure(text)
-                val x = offset.x.coerceIn(layout.size.width / 2f, canvasSize.width - layout.size.width / 2f) - layout.size.width / 2f
-                val topLeftOffset = Offset(x, max(offset.y - layout.size.height, 0f))
                 drawText(
                     layout,
-                    topLeft = topLeftOffset
+                    canvasSize,
+                    offset,
+                    Position.Top,
+                    true
                 )
             },
             pointClick = pointClick,

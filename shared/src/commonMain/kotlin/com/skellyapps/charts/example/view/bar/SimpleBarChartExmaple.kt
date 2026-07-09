@@ -62,10 +62,10 @@ private val yAxis = BarChartData.YAxis(
 
 private val bottomAxis = BarChartData.XAxis(
     GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
-    GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
+    GridChartData.Axis.DividerCustomization(Color.Black)) { index ->
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         VerticalDivider(Modifier.height(8.dp))
-        Text(value.toString())
+        Text(index.toString())
     }
 }
 
