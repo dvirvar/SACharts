@@ -154,7 +154,10 @@ fun GridLineCustomizationLineChartExample() {
         chartData = chartData.copy(bottomAxis = chartData.bottomAxis?.copy(gridLines = gridLines))
     }
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()),
+            Arrangement.spacedBy(8.dp),
+            Alignment.Bottom
+        ) {
             Spacer(Modifier.width(8.dp))
             Column {
                 Text("Left axis", style = MaterialTheme.typography.titleSmall)

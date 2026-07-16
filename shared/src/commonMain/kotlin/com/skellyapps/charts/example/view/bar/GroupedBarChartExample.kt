@@ -1,15 +1,20 @@
 package com.skellyapps.charts.example.view.bar
 
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -18,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -26,11 +32,13 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import com.skellyapps.charts.bar.animation.BarChartAnimations
 import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.view.BarChart
 import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.example.roundToDecimals
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 private val blueCategory = BarChartData.Category(
@@ -93,8 +101,16 @@ fun GroupedBarChartExample() {
         addCategoryEnabled = yAxis.categories.size < colors.size
         removeCategoryEnabled = yAxis.categories.size > 1
     }
+    val animations = retain { BarChartAnimations(
+        BarChartAnimations.Growth(tween(2500), 1f)
+    ) }
+    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Arrangement.spacedBy(8.dp),
+            Alignment.Bottom
+        ) {
             Button({
                 yAxis.categories.add(generateCategory())
             }, enabled = addCategoryEnabled) {
@@ -106,12 +122,27 @@ fun GroupedBarChartExample() {
             }, enabled = removeCategoryEnabled) {
                 Text("Remove category")
             }
+            Column {
+                Text("Animations", style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.Bottom) {
+                    Button({
+                        scope.launch {
+                            animations.growth!!.snapTo(0f)
+                            animations.growth!!.animate()
+                        }
+                    }, enabled = !animations.growth!!.isRunning) {
+                        Text("Growth")
+                    }
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
         BarChart(
             Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp, end = 24.dp),
             chartData,
-        ) { canvasSize, categoryTag, index, topLeft, barSize ->
+            animations = animations
+        ) { canvasSize, categoryTag, index, barRect ->
             val value = yAxis.categories[categoryTag].values[index].value
             val isNegative = value < 0.0
             val text = value.roundToDecimals(1).toString()
@@ -119,8 +150,7 @@ fun GroupedBarChartExample() {
             drawTextOutside(
                 layout,
                 canvasSize,
-                topLeft,
-                barSize,
+                barRect,
                 true,
                 isNegative,
                 Color.Black

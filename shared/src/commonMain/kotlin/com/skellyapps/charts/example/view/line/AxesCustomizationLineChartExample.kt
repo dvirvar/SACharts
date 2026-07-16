@@ -201,8 +201,10 @@ fun AxesCustomizationLineChartExample() {
         chartData = chartData.copy(bottomAxis = chartData.bottomAxis?.copy(value = value))
     }
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-            Spacer(Modifier.width(8.dp))
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Arrangement.spacedBy(8.dp),
+            Alignment.Bottom
+        ) {
             Column {
                 Text("Left axis", style = MaterialTheme.typography.titleSmall)
                 Row(verticalAlignment = Alignment.Bottom) {

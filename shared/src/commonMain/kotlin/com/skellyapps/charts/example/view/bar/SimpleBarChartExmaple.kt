@@ -86,7 +86,10 @@ fun SimpleBarChartExample() {
         chartData = chartData.copy(isLeftYAxis = isLeftAxis)
     }
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            Arrangement.spacedBy(8.dp)
+        ) {
             Row(Modifier.toggleable(isLeftAxis, role = Role.Checkbox) { isLeftAxisState.value = it }, verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(isLeftAxis, null)
                 Text("Is left axis")

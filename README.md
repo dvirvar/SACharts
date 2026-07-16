@@ -8,6 +8,7 @@ Supports Android, iOS, Desktop, and Web.
 * **Bar & Horizontal Bar Charts:** Grouped and stacked category data models, axis alignment. Customizable axes labels, bar values(you can draw whatever you want on a bar), bars with corner radius and brush fills.
 * **Pie & Dynamic Pie Charts:** Support for donut holes. Customizable slice gaps, internal slice borders, value labels and external pointing labels.
 * **Dynamic Sizing:** `DynamicPieChart` auto-calculates available space, resizing dynamically fit accordingly to your data and customizations.
+* **Animations:** All charts support animations.
 
 ## 📦 Installation
 Add the dependency to your shared module's `commonMain` source set:
@@ -100,6 +101,30 @@ LineChart(
     zoom = Zoom(scrollJump = 0.3f, max = 5f) // <-- Add this parameter
 )
 ```
+Add animations:
+
+You can play both animations or just 1, it's your own choice when to animate and how. 
+```kotlin
+val animations = retain { LineChartAnimations(
+        growth = LineChartAnimations.Growth(spec = tween(2000)),
+        reveal = LineChartAnimations.Reveal(spec = tween(2000))
+    ) }
+val scope = rememberCoroutineScope()
+LaunchedEffect(scope) { 
+    scope.launch {
+        animations.growth!!.animate()
+    }
+    scope.launch { 
+        animations.reveal!!.animate()
+    }
+}
+LineChart(
+  modifier = Modifier.fillMaxWidth().height(300.dp),
+  data = chartData,
+  animations = animations // <-- Add this parameter
+)
+
+```
 Add a view(popup) on point click:
 ```kotlin
 private val pointClick = LineChartData.PointClick(
@@ -177,7 +202,7 @@ LineChart(
   modifier = Modifier.fillMaxWidth().height(300.dp),
   data = chartData,
   zoom = Zoom(scrollJump = 0.3f, max = 5f),
-  drawOnEachPoint = { canvasSize, lineTag, index, offset -> // <-- Add this parameter
+  drawOnEachPoint = { canvasSize, lineTag, index, offset, animatedYPixel -> // <-- Add this parameter
     val radius = 5.dp.toPx()
     //Don't draw if the point is out of bounds by radius distance
     //Needed only if zoom is set
@@ -296,12 +321,33 @@ private val yAxis = BarChartData.YAxis(
     minValue = 0.0
     ...
 ```
+Add animation:
+
+It's your own choice when to animate and how.
+
+(Growth doesn't work on stacked bars for now)
+```kotlin
+val animations = retain { BarChartAnimations(
+        growth = BarChartAnimations.Growth(tween(2500), 1f)
+    ) }
+val scope = rememberCoroutineScope()
+LaunchedEffect(scope) {
+  scope.launch {
+    animations.growth!!.animate()
+  }
+}
+BarChart(
+  modifier = Modifier.fillMaxWidth().height(300.dp),
+  data = chartData,
+  animations = animations // <-- Add this parameter
+)
+```
 Add labels to bars:
 ```kotlin
 BarChart(
     modifier = Modifier.fillMaxWidth().height(300.dp),
     data = chartData,
-    drawOnEachValue = { canvasSize, categoryTag, index, topLeft, barSize ->
+    drawOnEachValue = { canvasSize, categoryTag, index, barRect ->
       val value = yAxis.categories[categoryTag].values[index].value
       val isNegative = value < 0.0
       val text = value.roundToDecimals(1).toString()
@@ -310,8 +356,7 @@ BarChart(
       drawTextOutside(
         textLayoutResult = layout,
         canvasSize = canvasSize,
-        topLeft = topLeft,
-        barSize = barSize,
+        barRect = barRect,
         stayInCanvasBounds = true,
         isNegative = isNegative,
         color = Color.Black
@@ -319,8 +364,7 @@ BarChart(
       //Or you can draw it inside the bar
       drawTextInside(
         textLayoutResult = layout,
-        topLeft = topLeft,
-        barSize = barSize,
+        barRect = barRect,
         position = Position.Bottom,
         isNegative = isNegative,
         color = Color.White,
@@ -374,6 +418,31 @@ To inner border to slices:
 PieChartData(
   slices = slices,
   sliceBorder = Slice.Border(2.dp, Color.Black)// <-- Add this parameter
+)
+```
+Add animations:
+
+You can play both animations or just 1, it's your own choice when to animate and how.
+
+(DynamicPieChart is using DynamicPieChartAnimations)
+```kotlin
+val animations = retain { PieChartAnimations(
+  scale = PieChartAnimations.Scale(tween(2000), 1f),
+  growth = PieChartAnimations.Growth(tween(2000), 1f)
+) }
+val scope = rememberCoroutineScope()
+LaunchedEffect(scope) {
+  scope.launch {
+    animations.scale!!.animate()
+  }
+  scope.launch {
+    animations.growth!!.animate()
+  }
+}
+BarChart(
+  modifier = Modifier.fillMaxWidth().height(300.dp),
+  data = chartData,
+  animations = animations // <-- Add this parameter
 )
 ```
 To add labels to slices:

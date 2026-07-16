@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
+import com.skellyapps.charts.pie.animation.DynamicPieChartAnimations
 import com.skellyapps.charts.pie.extension.drawBorderInside
 import com.skellyapps.charts.pie.graphics.PieChartDrawScope
 import com.skellyapps.charts.pie.graphics.PieChartDrawScopeImpl
@@ -26,12 +27,14 @@ import kotlin.math.sin
  *
  * @param modifier Mandatory modifier to specify size
  * @param data [DynamicPieChartData]
+ * @param animations To enable animations
  * @param drawOnEachSlice To draw on each slice
  */
 @Composable
 fun DynamicPieChart(
     modifier: Modifier,
     data: DynamicPieChartData,
+    animations: DynamicPieChartAnimations = DynamicPieChartAnimations.none,
     drawOnEachSlice: (PieChartDrawScope.(sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double) -> Unit)? = null
 ) {
     Canvas(modifier) {
@@ -161,9 +164,32 @@ fun DynamicPieChart(
 
         if (data.slices.size == 1) {
             val slice = data.slices.first()
+            val progress = if (animations.growth != null) animations.growth.value else 1f
+            val animatedSweepAngle = 360f * progress
+
+            val outerRect = Rect(Offset(centerX - outerRadius, centerY - outerRadius), Size(outerRadius * 2, outerRadius * 2))
+            val innerRect = Rect(Offset(centerX - innerRadius, centerY - innerRadius), Size(innerRadius * 2, innerRadius * 2))
+
+            val startAngle = data.startAngle
+
             val donutRingPath = Path().apply {
-                addArc(Rect(Offset(centerX - outerRadius, centerY - outerRadius), Size(outerRadius * 2, outerRadius * 2)), 0f, 360f)
-                addArc(Rect(Offset(centerX - innerRadius, centerY - innerRadius), Size(innerRadius * 2, innerRadius * 2)), 0f, -360f)
+                if (animatedSweepAngle < 360f) {
+                    arcTo(
+                        rect = outerRect,
+                        startAngleDegrees = startAngle,
+                        sweepAngleDegrees = animatedSweepAngle,
+                        forceMoveTo = true
+                    )
+                    arcTo(
+                        rect = innerRect,
+                        startAngleDegrees = startAngle + animatedSweepAngle,
+                        sweepAngleDegrees = -animatedSweepAngle,
+                        forceMoveTo = false
+                    )
+                } else {
+                    addArc(outerRect, 0f, 360f)
+                    addArc(innerRect, 0f, -360f)
+                }
             }
             drawPath(donutRingPath, color = slice.color)
             data.sliceBorder?.let {
@@ -181,9 +207,10 @@ fun DynamicPieChart(
             }
         } else {
             var startAngle = data.startAngle + data.sliceSpacingDegrees / 2f
+            val animationValue = if (animations.growth != null) animations.growth.value else 1f
 
             data.slices.forEach { slice ->
-                val sweepAngle = ((slice.value / totalValue) * 360.0).toFloat() - data.sliceSpacingDegrees
+                val sweepAngle = (((slice.value / totalValue) * 360.0).toFloat() - data.sliceSpacingDegrees) * animationValue
 
                 val startRad = startAngle * (PI / 180.0)
                 val endRad = (startAngle + sweepAngle) * (PI / 180.0)

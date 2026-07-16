@@ -1,5 +1,6 @@
 package com.skellyapps.charts.example.view.line
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,8 +47,10 @@ import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.example.arrowValueStepper
 import com.skellyapps.charts.example.roundToDecimals
+import com.skellyapps.charts.line.animation.LineChartAnimations
 import com.skellyapps.charts.line.model.LineChartData
 import com.skellyapps.charts.line.view.LineChart
+import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.random.Random
 
@@ -171,9 +176,18 @@ fun LineCustomizationLineChartExample() {
         redLine = redLine.copy(fillCustomization = fillCustomization)
         chartData = chartData.copy(rightAxis = chartData.rightAxis?.copy(mutableListOf(redLine)))
     }
+    var animateDrawOnPoints by retain { mutableStateOf(true) }
+    val animations = retain { LineChartAnimations(
+        LineChartAnimations.Growth(tween(2000), 1f),
+        LineChartAnimations.Reveal(tween(2000), 1f)
+    ) }
+    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
-            Spacer(Modifier.width(8.dp))
+        Row(
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Arrangement.spacedBy(8.dp),
+            Alignment.Bottom
+        ) {
             Column {
                 Text("General", style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.weight(1f))
@@ -269,13 +283,54 @@ fun LineCustomizationLineChartExample() {
                     }
                 }
             }
-            Spacer(Modifier.width(8.dp))
+            Column {
+                Text("Animations", style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.Bottom) {
+                    Row(Modifier.toggleable(animateDrawOnPoints, role = Role.Checkbox) { animateDrawOnPoints = it }, verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(animateDrawOnPoints, null)
+                        Text("Animate draw on points")
+                    }
+                    Button({
+                        scope.launch {
+                            animations.growth!!.snapTo(0f)
+                            animations.growth!!.animate()
+                        }
+                    }, enabled = !animations.growth!!.isRunning) {
+                        Text("Growth")
+                    }
+                    Button({
+                        scope.launch {
+                            animations.reveal!!.snapTo(0f)
+                            animations.reveal!!.animate()
+                        }
+                    }, enabled = !animations.reveal!!.isRunning) {
+                        Text("Reveal")
+                    }
+                    Button(
+                        {
+                            scope.launch {
+                                animations.growth!!.snapTo(0f)
+                                animations.growth!!.animate()
+                            }
+                            scope.launch {
+                                animations.reveal!!.snapTo(0f)
+                                animations.reveal!!.animate()
+                            }
+                        }, enabled = !animations.growth!!.isRunning && !animations.reveal!!.isRunning
+                    ) {
+                        Text("All")
+                    }
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
         LineChart(
             Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp),
             chartData,
-            drawOnEachPoint = { canvasSize, lineTag, index, offset ->
+            animations = animations,
+            drawOnEachPoint = { canvasSize, lineTag, index, offset, animatedYPixel ->
+                val offset = if (animateDrawOnPoints) offset.copy(y = animatedYPixel) else offset
                 if (showPoints) {
                     if (lineTag == blueTag) {
                         drawCircle(

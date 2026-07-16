@@ -30,8 +30,10 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.zIndex
+import com.skellyapps.charts.bar.animation.BarChartAnimations
 import com.skellyapps.charts.bar.graphics.BarChartDrawScope
 import com.skellyapps.charts.bar.graphics.BarChartDrawScopeImpl
 import com.skellyapps.charts.bar.model.BarChartData
@@ -52,6 +54,7 @@ internal const val barsZIndex = dividersZIndex - 5f
  * @param modifier Mandatory modifier to specify size
  * @param data [BarChartData]
  * @param background The background of the inside of the chart
+ * @param animations To enable animations
  * @param drawOnEachValue To draw on each value on each category
  */
 @Composable
@@ -59,7 +62,8 @@ fun BarChart(
     modifier: Modifier,
     data: BarChartData,
     background: Brush = SolidColor(Color.Transparent),
-    drawOnEachValue: (BarChartDrawScope.(canvasSize: Size, categoryTag: Int, index: Int, topLeft: Offset, barSize: Size) -> Unit)? = null
+    animations: BarChartAnimations = BarChartAnimations.none,
+    drawOnEachValue: (BarChartDrawScope.(canvasSize: Size, categoryTag: Int, index: Int, barRect: Rect) -> Unit)? = null
 ) {
     val density = LocalDensity.current
     var canvasSize by remember { mutableStateOf(IntSize(0,0)) }
@@ -274,9 +278,14 @@ fun BarChart(
                             val path = Path()
                             offsetCategories.fastForEach { category ->
                                 category.offsets.fastForEach {
+                                    val rect = if (animations.growth != null && data.yAxis.type is BarChartData.Type.Grouped) {
+                                        animations.growth.getRect(it)
+                                    } else {
+                                        Rect(it.topLeft.offset, it.size)
+                                    }
                                     path.addRoundRect(
                                         RoundRect(
-                                            Rect(it.topLeft.offset, it.size),
+                                            rect,
                                             topLeft = if (it.isNegative) category.customization.bottomLeftCornerRadius else category.customization.topLeftCornerRadius,
                                             topRight = if (it.isNegative) category.customization.bottomRightCornerRadius else category.customization.topRightCornerRadius,
                                             bottomRight = if (it.isNegative) category.customization.topRightCornerRadius else category.customization.bottomRightCornerRadius,
@@ -298,13 +307,17 @@ fun BarChart(
                                 with(BarChartDrawScopeImpl(this)) {
                                     offsetCategories.fastForEach { category ->
                                         category.offsets.fastForEachIndexed { index, offsetCategory ->
+                                            val rect = if (animations.growth != null && data.yAxis.type is BarChartData.Type.Grouped) {
+                                                animations.growth.getRect(offsetCategory)
+                                            } else {
+                                                Rect(offsetCategory.topLeft.offset, offsetCategory.size)
+                                            }
                                             drawOnEachValue(
                                                 this,
                                                 size,
                                                 category.tag,
                                                 index,
-                                                offsetCategory.topLeft.offset,
-                                                offsetCategory.size
+                                                rect
                                             )
                                         }
                                     }

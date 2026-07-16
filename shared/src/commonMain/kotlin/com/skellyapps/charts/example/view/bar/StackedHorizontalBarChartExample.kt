@@ -1,5 +1,6 @@
 package com.skellyapps.charts.example.view.bar
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -95,7 +97,10 @@ fun StackedHorizontalBarChartExample() {
         removeCategoryEnabled = bottomAxis.categories.size > 1
     }
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Arrangement.spacedBy(8.dp)
+        ) {
             Button({
                 bottomAxis.categories.add(generateCategory())
             }, enabled = addCategoryEnabled) {
@@ -112,14 +117,13 @@ fun StackedHorizontalBarChartExample() {
         HorizontalBarChart(
             Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp, end = 24.dp),
             chartData,
-        ) { canvasSize, categoryTag, index, topLeft, barSize ->
+        ) { canvasSize, categoryTag, index, barRect ->
             val text = bottomAxis.categories[categoryTag].values[index].value.roundToDecimals(1).toString()
             val layout = textMeasurer.measure(text)
             drawTextInside(
                 layout,
-                topLeft,
-                barSize,
-                Position.BottomRight,
+                barRect,
+                Position.MiddleRight,
                 false,
                 Color.White
             )

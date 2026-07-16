@@ -2,6 +2,7 @@ package com.skellyapps.charts.bar.graphics
 
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -18,8 +19,7 @@ interface HorizontalBarChartDrawScope : DrawScope {
     fun drawTextOutside(
         textLayoutResult: TextLayoutResult,
         canvasSize: Size,
-        topLeft: Offset,
-        barSize: Size,
+        barRect: Rect,
         stayInCanvasBounds: Boolean,
         isNegative: Boolean,
         isLeftYAxis: Boolean,
@@ -33,11 +33,11 @@ interface HorizontalBarChartDrawScope : DrawScope {
         val textWidth = textLayoutResult.size.width
         val textHeight = textLayoutResult.size.height
         var x = if (isNegative == isLeftYAxis) {
-            topLeft.x - textWidth
+            barRect.left - textWidth
         } else {
-            topLeft.x + barSize.width
+            barRect.right
         }
-        var y = topLeft.y + barSize.height / 2f - textHeight / 2f
+        var y = barRect.top + barRect.height / 2f - textHeight / 2f
         if (stayInCanvasBounds) {
             x = x.coerceIn(0f, canvasSize.width - textWidth)
             y = y.coerceIn(0f, canvasSize.height - textHeight)
@@ -56,8 +56,7 @@ interface HorizontalBarChartDrawScope : DrawScope {
 
     fun drawTextInside(
         textLayoutResult: TextLayoutResult,
-        topLeft: Offset,
-        barSize: Size,
+        barRect: Rect,
         position: Position,
         isNegative: Boolean,
         color: Color = Color.Unspecified,
@@ -73,40 +72,40 @@ interface HorizontalBarChartDrawScope : DrawScope {
         var y: Float
         when (position) {
             Position.TopLeft -> {
-                x = if (isNegative) topLeft.x + barSize.width - textWidth else topLeft.x
-                y = topLeft.y
+                x = if (isNegative) barRect.right - textWidth else barRect.left
+                y = barRect.top
             }
             Position.Top -> {
-                x = topLeft.x + barSize.width / 2f - textWidth / 2f
-                y = topLeft.y
+                x = barRect.left + barRect.width / 2f - textWidth / 2f
+                y = barRect.top
             }
             Position.TopRight -> {
-                x = if (isNegative) topLeft.x else topLeft.x + barSize.width - textWidth
-                y = topLeft.y
+                x = if (isNegative) barRect.left else barRect.right - textWidth
+                y = barRect.top
             }
             Position.MiddleLeft -> {
-                x = if (isNegative) topLeft.x + barSize.width - textWidth else topLeft.x
-                y = topLeft.y + barSize.height / 2f - textHeight / 2f
+                x = if (isNegative) barRect.right - textWidth else barRect.left
+                y = barRect.top + barRect.height / 2f - textHeight / 2f
             }
             Position.Middle -> {
-                x = topLeft.x + barSize.width / 2f - textWidth / 2f
-                y = topLeft.y + barSize.height / 2f - textHeight / 2f
+                x = barRect.left + barRect.width / 2f - textWidth / 2f
+                y = barRect.top + barRect.height / 2f - textHeight / 2f
             }
             Position.MiddleRight -> {
-                x = if (isNegative) topLeft.x else topLeft.x + barSize.width - textWidth
-                y = topLeft.y + barSize.height / 2f - textHeight / 2f
+                x = if (isNegative) barRect.left else barRect.right - textWidth
+                y = barRect.top + barRect.height / 2f - textHeight / 2f
             }
             Position.BottomLeft -> {
-                x = if (isNegative) topLeft.x + barSize.width - textWidth else topLeft.x
-                y = topLeft.y + barSize.height - textHeight
+                x = if (isNegative) barRect.right - textWidth else barRect.left
+                y = barRect.bottom - textHeight
             }
             Position.Bottom -> {
-                x = topLeft.x + barSize.width / 2f - textWidth / 2f
-                y = topLeft.y + barSize.height - textHeight
+                x = barRect.left + barRect.width / 2f - textWidth / 2f
+                y = barRect.bottom - textHeight
             }
             Position.BottomRight -> {
-                x = if (isNegative) topLeft.x else topLeft.x + barSize.width - textWidth
-                y = topLeft.y + barSize.height - textHeight
+                x = if (isNegative) barRect.left else barRect.right - textWidth
+                y = barRect.bottom - textHeight
             }
         }
         drawText(

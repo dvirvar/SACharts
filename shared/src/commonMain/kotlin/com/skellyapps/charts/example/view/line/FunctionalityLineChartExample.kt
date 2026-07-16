@@ -168,7 +168,7 @@ fun FunctionalityLineChartExample() {
             chartData,
             background = Brush.linearGradient(colors.map {it.copy(0.25f)}),
             zoom = zoom,
-            drawOnEachPoint = { canvasSize, lineTag, index, offset ->
+            drawOnEachPoint = { canvasSize, lineTag, index, offset, _ ->
                 val radius = 5.dp.toPx()
                 if (offset.x < -radius || offset.x > canvasSize.width + radius ||
                     offset.y < -radius || offset.y > canvasSize.height + radius) {

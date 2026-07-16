@@ -1,8 +1,10 @@
 package com.skellyapps.charts.example.view.line
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -31,8 +34,10 @@ import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.example.roundToDecimals
+import com.skellyapps.charts.line.animation.LineChartAnimations
 import com.skellyapps.charts.line.model.LineChartData
 import com.skellyapps.charts.line.view.LineChart
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 private val blueLine = LineChartData.Line(
@@ -161,8 +166,17 @@ fun SimpleTwoAxesLineChartExample() {
         removeLeftAxisLineEnabled = leftAxis.lines.isNotEmpty()
         removeRightAxisLineEnabled = rightAxis.lines.isNotEmpty()
     }
+    val animations = retain { LineChartAnimations(
+        LineChartAnimations.Growth(tween(2000), 1f),
+        LineChartAnimations.Reveal(tween(2000), 1f)
+    ) }
+    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Bottom) {
+        Row(
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Arrangement.spacedBy(8.dp),
+            Alignment.Bottom
+        ) {
             Column {
                 Text("Left axis", style = MaterialTheme.typography.titleSmall)
                 Row(Modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -193,11 +207,48 @@ fun SimpleTwoAxesLineChartExample() {
                     }
                 }
             }
+            Column {
+                Text("Animations", style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.Bottom) {
+                    Button({
+                        scope.launch {
+                            animations.growth!!.snapTo(0f)
+                            animations.growth!!.animate()
+                        }
+                    }, enabled = !animations.growth!!.isRunning) {
+                        Text("Growth")
+                    }
+                    Button({
+                        scope.launch {
+                            animations.reveal!!.snapTo(0f)
+                            animations.reveal!!.animate()
+                        }
+                    }, enabled = !animations.reveal!!.isRunning) {
+                        Text("Reveal")
+                    }
+                    Button(
+                        {
+                            scope.launch {
+                                animations.growth!!.snapTo(0f)
+                                animations.growth!!.animate()
+                            }
+                            scope.launch {
+                                animations.reveal!!.snapTo(0f)
+                                animations.reveal!!.animate()
+                            }
+                        }, enabled = !animations.growth!!.isRunning && !animations.reveal!!.isRunning
+                    ) {
+                        Text("All")
+                    }
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
         LineChart(
             Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp),
             chartData,
+            animations = animations
         )
     }
 }

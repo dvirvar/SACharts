@@ -39,6 +39,7 @@ import androidx.compose.ui.util.fastFirstOrNull
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.zIndex
+import com.skellyapps.charts.common.extension.clipRect
 import com.skellyapps.charts.common.extension.detectTransformGestures
 import com.skellyapps.charts.common.extension.`if`
 import com.skellyapps.charts.common.model.ChartPixel
@@ -50,6 +51,7 @@ import com.skellyapps.charts.common.view.AxisColumn
 import com.skellyapps.charts.common.view.AxisRow
 import com.skellyapps.charts.common.view.GridChartCanvas
 import com.skellyapps.charts.common.view.dividersZIndex
+import com.skellyapps.charts.line.animation.LineChartAnimations
 import com.skellyapps.charts.line.extension.getClosestIndexDistance
 import com.skellyapps.charts.line.extension.getMaxX
 import com.skellyapps.charts.line.extension.getMaxY
@@ -70,6 +72,7 @@ internal const val linesZIndex = dividersZIndex + 10f
  * @param data [LineChartData]
  * @param background The background of the inside of the chart
  * @param zoom To enable zoom
+ * @param animations To enable animations
  * @param drawOnEachPoint To draw on each point on each line
  * @param pointClick To show a view on point click
  * @param pointDrag To be able to drag a point
@@ -81,16 +84,17 @@ fun LineChart(
     data: LineChartData,
     background: Brush = SolidColor(Color.Transparent),
     zoom: Zoom? = null,
+    animations: LineChartAnimations = LineChartAnimations.none,
     /**
      * For example drawing circles on points:
      * ```
-     * { canvasSize, lineTag, index, offset ->
+     * { canvasSize, lineTag, index, offset, animatedYPixel ->
      * val radius = 5.dp.toPx()
      * drawCircle(Color.Red, radius, offset)
      * }
      * ```
      */
-    drawOnEachPoint: (LineChartDrawScope.(canvasSize: Size, lineTag: Int, index: Int, offset: Offset) -> Unit)? = null,
+    drawOnEachPoint: (LineChartDrawScope.(canvasSize: Size, lineTag: Int, index: Int, offset: Offset, animatedYPixel: Float) -> Unit)? = null,
     pointClick: LineChartData.PointClick? = null,
     pointDrag: LineChartData.PointDrag? = null,
     pointDragAfterLongPress: LineChartData.PointDrag? = null,
@@ -489,83 +493,150 @@ fun LineChart(
                             }
                         })
                     .drawWithContent {
+                        //Draw the lines connecting the points
                         leftOffsetLines?.fastForEach { line ->
-                            val path = Path().apply {
-                                line.offsets.fastForEachIndexed { index, chartPixel ->
-                                    if (index == 0) {
-                                        moveTo(chartPixel.x.value, chartPixel.y.value)
-                                    } else {
-                                        lineTo(chartPixel.x.value, chartPixel.y.value)
+                            val left: Float
+                            val top: Float
+                            val right: Float
+                            val bottom: Float
+                            if (animations.reveal != null) {
+                                with(density) {
+                                    left = -animations.reveal.rectHorizontalPadding.toPx()
+                                    right = (-left + size.width) * animations.reveal.value
+                                    top = -animations.reveal.rectVerticalPadding.toPx()
+                                    bottom = -top + size.height
+                                }
+                            } else {
+                                left = 0f
+                                top = 0f
+                                right = 0f
+                                bottom = 0f
+                            }
+                            clipRect(
+                                enabled = animations.reveal != null && animations.reveal.value < 1f,
+                                left = left,
+                                top = top,
+                                right = right,
+                                bottom = bottom
+                            ) {
+                                val path = Path().apply {
+                                    line.offsets.fastForEachIndexed { index, chartPixel ->
+                                        val yPixel = if (animations.growth != null) animations.growth.getYPixel(size, chartPixel) else chartPixel.y.value
+                                        if (index == 0) {
+                                            moveTo(chartPixel.x.value, yPixel)
+                                        } else {
+                                            lineTo(chartPixel.x.value, yPixel)
+                                        }
                                     }
                                 }
-                            }
-                            drawPath(
-                                path,
-                                line.customization.brush,
-                                line.customization.alpha,
-                                Stroke(line.customization.thickness.toPx(), line.customization.miter, line.customization.cap, line.customization.join, line.customization.pathEffect),
-                                line.customization.colorFilter,
-                                line.customization.blendMode
-                            )
-                            if (line.fillCustomization != null && line.offsets.isNotEmpty()) {
-                                path.lineTo(line.offsets.last().x.value, size.height)
-                                path.lineTo(line.offsets.first().x.value, size.height)
-                                path.close()
                                 drawPath(
                                     path,
-                                    line.fillCustomization.brush,
-                                    line.fillCustomization.alpha,
-                                    Fill,
-                                    line.fillCustomization.colorFilter,
-                                    line.fillCustomization.blendMode
+                                    line.customization.brush,
+                                    line.customization.alpha,
+                                    Stroke(
+                                        line.customization.thickness.toPx(),
+                                        line.customization.miter,
+                                        line.customization.cap,
+                                        line.customization.join,
+                                        line.customization.pathEffect
+                                    ),
+                                    line.customization.colorFilter,
+                                    line.customization.blendMode
                                 )
-                            }
-                            //Let the users config what they want on the point
-                            drawOnEachPoint?.let {
-                                with(LineChartDrawScopeImpl(this)) {
-                                    line.offsets.fastForEachIndexed { index, chartPixel ->
-                                        drawOnEachPoint(this, size, line.tag, index, chartPixel.offset)
+                                if (line.fillCustomization != null && line.offsets.isNotEmpty()) {
+                                    path.lineTo(line.offsets.last().x.value, size.height)
+                                    path.lineTo(line.offsets.first().x.value, size.height)
+                                    path.close()
+                                    drawPath(
+                                        path,
+                                        line.fillCustomization.brush,
+                                        line.fillCustomization.alpha,
+                                        Fill,
+                                        line.fillCustomization.colorFilter,
+                                        line.fillCustomization.blendMode
+                                    )
+                                }
+                                //Let the users config what they want on the point
+                                drawOnEachPoint?.let {
+                                    with(LineChartDrawScopeImpl(this)) {
+                                        line.offsets.fastForEachIndexed { index, chartPixel ->
+                                            val yPixel = if (animations.growth != null) animations.growth.getYPixel(size, chartPixel) else chartPixel.y.value
+                                            drawOnEachPoint(this, size, line.tag, index, chartPixel.offset, yPixel)
+                                        }
                                     }
                                 }
                             }
                         }
                         //Draw the lines connecting the points
                         rightOffsetLines?.fastForEach { line ->
-                            val path = Path().apply {
-                                line.offsets.fastForEachIndexed { index, chartPixel ->
-                                    if (index == 0) {
-                                        moveTo(chartPixel.x.value, chartPixel.y.value)
-                                    } else {
-                                        lineTo(chartPixel.x.value, chartPixel.y.value)
+                            val left: Float
+                            val top: Float
+                            val right: Float
+                            val bottom: Float
+                            if (animations.reveal != null) {
+                                with(density) {
+                                    left = -animations.reveal.rectHorizontalPadding.toPx()
+                                    right = (-left + size.width) * animations.reveal.value
+                                    top = -animations.reveal.rectVerticalPadding.toPx()
+                                    bottom = -top + size.height
+                                }
+                            } else {
+                                left = 0f
+                                top = 0f
+                                right = 0f
+                                bottom = 0f
+                            }
+                            clipRect(
+                                enabled = animations.reveal != null && animations.reveal.value < 1f,
+                                left = left,
+                                top = top,
+                                right = right,
+                                bottom = bottom
+                            ) {
+                                val path = Path().apply {
+                                    line.offsets.fastForEachIndexed { index, chartPixel ->
+                                        val yPixel = if (animations.growth != null) animations.growth.getYPixel(size, chartPixel) else chartPixel.y.value
+                                        if (index == 0) {
+                                            moveTo(chartPixel.x.value, yPixel)
+                                        } else {
+                                            lineTo(chartPixel.x.value, yPixel)
+                                        }
                                     }
                                 }
-                            }
-                            drawPath(
-                                path,
-                                line.customization.brush,
-                                line.customization.alpha,
-                                Stroke(line.customization.thickness.toPx(), line.customization.miter, line.customization.cap, line.customization.join, line.customization.pathEffect),
-                                line.customization.colorFilter,
-                                line.customization.blendMode
-                            )
-                            if (line.fillCustomization != null && line.offsets.isNotEmpty()) {
-                                path.lineTo(line.offsets.last().x.value, size.height)
-                                path.lineTo(line.offsets.first().x.value, size.height)
-                                path.close()
                                 drawPath(
                                     path,
-                                    line.fillCustomization.brush,
-                                    line.fillCustomization.alpha,
-                                    Fill,
-                                    line.fillCustomization.colorFilter,
-                                    line.fillCustomization.blendMode
+                                    line.customization.brush,
+                                    line.customization.alpha,
+                                    Stroke(
+                                        line.customization.thickness.toPx(),
+                                        line.customization.miter,
+                                        line.customization.cap,
+                                        line.customization.join,
+                                        line.customization.pathEffect
+                                    ),
+                                    line.customization.colorFilter,
+                                    line.customization.blendMode
                                 )
-                            }
-                            //Let the users config what they want on the point
-                            drawOnEachPoint?.let {
-                                with(LineChartDrawScopeImpl(this)) {
-                                    line.offsets.fastForEachIndexed { index, chartPixel ->
-                                        drawOnEachPoint(this, size, line.tag, index, chartPixel.offset)
+                                if (line.fillCustomization != null && line.offsets.isNotEmpty()) {
+                                    path.lineTo(line.offsets.last().x.value, size.height)
+                                    path.lineTo(line.offsets.first().x.value, size.height)
+                                    path.close()
+                                    drawPath(
+                                        path,
+                                        line.fillCustomization.brush,
+                                        line.fillCustomization.alpha,
+                                        Fill,
+                                        line.fillCustomization.colorFilter,
+                                        line.fillCustomization.blendMode
+                                    )
+                                }
+                                //Let the users config what they want on the point
+                                drawOnEachPoint?.let {
+                                    with(LineChartDrawScopeImpl(this)) {
+                                        line.offsets.fastForEachIndexed { index, chartPixel ->
+                                            val yPixel = if (animations.growth != null) animations.growth.getYPixel(size, chartPixel) else chartPixel.y.value
+                                            drawOnEachPoint(this, size, line.tag, index, chartPixel.offset, yPixel)
+                                        }
                                     }
                                 }
                             }

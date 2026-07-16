@@ -1,22 +1,29 @@
 package com.skellyapps.charts.example.view.line
 
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -27,8 +34,10 @@ import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.example.roundToDecimals
+import com.skellyapps.charts.line.animation.LineChartAnimations
 import com.skellyapps.charts.line.model.LineChartData
 import com.skellyapps.charts.line.view.LineChart
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 private val blueLine = LineChartData.Line(
@@ -38,7 +47,7 @@ private val blueLine = LineChartData.Line(
     LineChartData.Line.Customization(Color.Blue, join = StrokeJoin.Round)
 )
 private val leftAxis = LineChartData.YAxis(
-    lines = mutableListOf(blueLine),
+    lines = mutableStateListOf(blueLine),
     value = GridChartData.Axis.Value.Step(20.0),
     gridLines = GridChartData.Axis.GridLines(customization = GridChartData.Axis.DividerCustomization(Color.Gray, 1.dp)),
     dividerCustomization = GridChartData.Axis.DividerCustomization(Color.Black)) { value ->
@@ -87,8 +96,22 @@ fun SimpleLineChartExample() {
         addLineEnabled = leftAxis.lines.size < colors.size
         removeLineEnabled = leftAxis.lines.isNotEmpty()
     }
+    val animations = retain { LineChartAnimations(
+        LineChartAnimations.Growth(tween(2000), 1f),
+        LineChartAnimations.Reveal(tween(2000), 1f)
+    ) }
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(scope) {
+        scope.launch {
+            animations.reveal!!.animate()
+        }
+    }
     Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+            Arrangement.spacedBy(8.dp),
+            Alignment.Bottom
+        ) {
             Button({
                 leftAxis.lines.add(generateLine())
             }, enabled = addLineEnabled) {
@@ -100,11 +123,48 @@ fun SimpleLineChartExample() {
             }, enabled = removeLineEnabled) {
                 Text("Remove line")
             }
+            Column {
+                Text("Animations", style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.Bottom) {
+                    Button({
+                        scope.launch {
+                            animations.growth!!.snapTo(0f)
+                            animations.growth!!.animate()
+                        }
+                    }, enabled = !animations.growth!!.isRunning) {
+                        Text("Growth")
+                    }
+                    Button({
+                        scope.launch {
+                            animations.reveal!!.snapTo(0f)
+                            animations.reveal!!.animate()
+                        }
+                    }, enabled = !animations.reveal!!.isRunning) {
+                        Text("Reveal")
+                    }
+                    Button(
+                        {
+                            scope.launch {
+                                animations.growth!!.snapTo(0f)
+                                animations.growth!!.animate()
+                            }
+                            scope.launch {
+                                animations.reveal!!.snapTo(0f)
+                                animations.reveal!!.animate()
+                            }
+                        }, enabled = !animations.growth!!.isRunning && !animations.reveal!!.isRunning
+                    ) {
+                        Text("All")
+                    }
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
         LineChart(
             Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp, end = 24.dp),
             chartData,
+            animations = animations
         )
     }
 }

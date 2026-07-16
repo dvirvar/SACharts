@@ -2,6 +2,7 @@
 
 package com.skellyapps.charts.example.view.pie
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +32,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -45,8 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.example.arrowValueStepper
 import com.skellyapps.charts.example.roundToDecimals
+import com.skellyapps.charts.pie.animation.PieChartAnimations
 import com.skellyapps.charts.pie.model.PieChartData
 import com.skellyapps.charts.pie.view.PieChart
+import kotlinx.coroutines.launch
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
@@ -152,11 +156,16 @@ fun SimpleLabelsPieChartExample() {
         val lc = chartData.labelCustomization!!.lineCustomization.copy(shoulderLength = shoulderLineLength)
         chartData = chartData.copy(labelCustomization = chartData.labelCustomization?.copy(lineCustomization = lc))
     }
+    val animations = retain { PieChartAnimations(
+        PieChartAnimations.Scale(tween(2000), 1f),
+        PieChartAnimations.Growth(tween(2000), 1f)
+    ) }
+    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Bottom
+            Arrangement.spacedBy(8.dp),
+            Alignment.Bottom
         ) {
             Button({
                 slices.add(generateSlice())
@@ -202,7 +211,7 @@ fun SimpleLabelsPieChartExample() {
             }
             Row(Modifier.toggleable(showSliceBorder, role = Role.Checkbox) { showSliceBorder = it }, verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(showSliceBorder, null)
-                Text("Show slide border")
+                Text("Show slice border")
             }
             Column {
                 Text("Label customization", style = MaterialTheme.typography.titleSmall)
@@ -285,11 +294,48 @@ fun SimpleLabelsPieChartExample() {
                     )
                 }
             }
+            Column {
+                Text("Animations", style = MaterialTheme.typography.titleSmall)
+                Spacer(Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.Bottom) {
+                    Button({
+                        scope.launch {
+                            animations.scale!!.snapTo(0f)
+                            animations.scale!!.animate()
+                        }
+                    }, enabled = !animations.scale!!.isRunning) {
+                        Text("Scale")
+                    }
+                    Button({
+                        scope.launch {
+                            animations.growth!!.snapTo(0f)
+                            animations.growth!!.animate()
+                        }
+                    }, enabled = !animations.growth!!.isRunning) {
+                        Text("Growth")
+                    }
+                    Button(
+                        {
+                            scope.launch {
+                                animations.scale!!.snapTo(0f)
+                                animations.scale!!.animate()
+                            }
+                            scope.launch {
+                                animations.growth!!.snapTo(0f)
+                                animations.growth!!.animate()
+                            }
+                        }, enabled = !animations.scale!!.isRunning && !animations.growth!!.isRunning
+                    ) {
+                        Text("All")
+                    }
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
         PieChart(
             Modifier.size(300.dp).align(Alignment.CenterHorizontally).border(1.dp, Color.Black),
             chartData,
+            animations,
             { sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double ->
                 val layout = textMeasurer.measure(
                     slices[sliceTag].value.roundToDecimals(1).toString()
