@@ -47,9 +47,9 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             implementation(projects.library)
-            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtimeCompose)
-            implementation(libs.androidx.navigation)
+            implementation(libs.androidx.navigation3)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)

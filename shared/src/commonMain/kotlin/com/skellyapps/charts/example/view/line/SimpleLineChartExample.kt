@@ -101,11 +101,6 @@ fun SimpleLineChartExample() {
         LineChartAnimations.Reveal(tween(2000), 1f)
     ) }
     val scope = rememberCoroutineScope()
-    LaunchedEffect(scope) {
-        scope.launch {
-            animations.reveal!!.animate()
-        }
-    }
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),

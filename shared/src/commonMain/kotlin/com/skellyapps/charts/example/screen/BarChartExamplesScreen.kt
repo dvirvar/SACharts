@@ -20,7 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import com.skellyapps.charts.example.onMouseBackButton
 import com.skellyapps.charts.example.view.bar.GroupedBarChartExample
 import com.skellyapps.charts.example.view.bar.GroupedHorizontalBarChartExample
@@ -30,9 +31,9 @@ import com.skellyapps.charts.example.view.bar.StackedBarChartExample
 import com.skellyapps.charts.example.view.bar.StackedHorizontalBarChartExample
 
 @Composable
-internal fun BarChartExamplesScreen(navController: NavController) {
-    Scaffold(Modifier.fillMaxSize().onMouseBackButton { navController.popBackStack() }, {
-        TopAppBar({Text(Screen.BarChartExamples.name)}, navigationIcon = { IconButton({navController.popBackStack()}) { Icon(Icons.AutoMirrored.Default.ArrowBack, "Back") } })
+internal fun BarChartExamplesScreen(backStack: NavBackStack<NavKey>) {
+    Scaffold(Modifier.fillMaxSize().onMouseBackButton { backStack.removeLastOrNull() }, {
+        TopAppBar({Text(Screen.BarChartExamples.name)}, navigationIcon = { IconButton({backStack.removeLastOrNull()}) { Icon(Icons.AutoMirrored.Default.ArrowBack, "Back") } })
     }) {
         LazyColumn(Modifier.fillMaxSize().padding(it), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             item {

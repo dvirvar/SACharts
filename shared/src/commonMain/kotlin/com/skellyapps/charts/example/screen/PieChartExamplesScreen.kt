@@ -20,16 +20,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 import com.skellyapps.charts.example.onMouseBackButton
 import com.skellyapps.charts.example.view.pie.DynamicLabelsPieChartExample
 import com.skellyapps.charts.example.view.pie.SimpleLabelsPieChartExample
 import com.skellyapps.charts.example.view.pie.SimplePieChartExample
 
 @Composable
-internal fun PieChartExamplesScreen(navController: NavController) {
-    Scaffold(Modifier.fillMaxSize().onMouseBackButton { navController.popBackStack() }, {
-        TopAppBar({Text(Screen.PieChartExamples.name)}, navigationIcon = { IconButton({navController.popBackStack()}) { Icon(Icons.AutoMirrored.Default.ArrowBack, "Back") } })
+internal fun PieChartExamplesScreen(backStack: NavBackStack<NavKey>) {
+    Scaffold(Modifier.fillMaxSize().onMouseBackButton { backStack.removeLastOrNull() }, {
+        TopAppBar({Text(Screen.PieChartExamples.name)}, navigationIcon = { IconButton({backStack.removeLastOrNull()}) { Icon(Icons.AutoMirrored.Default.ArrowBack, "Back") } })
     }) {
         LazyColumn(Modifier.fillMaxSize().padding(it), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             item {

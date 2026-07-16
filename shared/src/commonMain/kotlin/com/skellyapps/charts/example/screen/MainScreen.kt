@@ -15,18 +15,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
-import androidx.navigation.NavController
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
 
 private val exampleScreens = listOf(Screen.LineChartExamples, Screen.BarChartExamples, Screen.PieChartExamples)
 
 @Composable
-internal fun MainScreen(navController: NavController) {
+internal fun MainScreen(backStack: NavBackStack<NavKey>) {
     Scaffold(Modifier.fillMaxSize(), {
         TopAppBar({Text(Screen.Main.name)})
     }) {
         FlowRow(Modifier.fillMaxSize().padding(it), Arrangement.spacedBy(6.dp)) {
             exampleScreens.fastForEach {
-                Button({navController.navigate(it)}) {
+                Button({backStack.add(it)}) {
                     Text(it.name)
                 }
             }
