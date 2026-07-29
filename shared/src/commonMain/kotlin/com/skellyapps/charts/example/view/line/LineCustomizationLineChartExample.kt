@@ -329,37 +329,36 @@ fun LineCustomizationLineChartExample() {
             Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp),
             chartData,
             animations = animations,
-            drawOnEachPoint = { canvasSize, lineTag, index, offset, animatedYPixel ->
-                val offset = if (animateDrawOnPoints) offset.copy(y = animatedYPixel) else offset
-                if (showPoints) {
-                    if (lineTag == blueTag) {
-                        drawCircle(
-                            colors[lineTag],
-                            pointsRadius,
-                            offset
-                        )
-                    } else {
-                        drawRect(
-                            colors[lineTag],
-                            offset - Offset(pointsRadius, pointsRadius),
-                            Size(pointsRadius * 2f, pointsRadius * 2f)
-                        )
-                    }
-                }
-                if (showValues) {
-                    val point = lines[lineTag].points[index]
-                    val xValue = point.x.roundToDecimals(1)
-                    val yValue = point.y.roundToDecimals(1)
-                    val text = "X:$xValue\nY:$yValue"
-                    val layout = textMeasurer.measure(text)
-                    val x = offset.x.coerceIn(layout.size.width / 2f, canvasSize.width - layout.size.width / 2f) - layout.size.width / 2f
-                    val topLeftOffset = Offset(x, max(offset.y - layout.size.height, 0f))
-                    drawText(
-                        layout,
-                        topLeft = topLeftOffset
+        ) { canvasSize, lineTag, index, offset, animatedYPixel ->
+            val offset = if (animateDrawOnPoints) offset.copy(y = animatedYPixel) else offset
+            if (showPoints) {
+                if (lineTag == blueTag) {
+                    drawCircle(
+                        colors[lineTag],
+                        pointsRadius,
+                        offset
+                    )
+                } else {
+                    drawRect(
+                        colors[lineTag],
+                        offset - Offset(pointsRadius, pointsRadius),
+                        Size(pointsRadius * 2f, pointsRadius * 2f)
                     )
                 }
             }
-        )
+            if (showValues) {
+                val point = lines[lineTag].points[index]
+                val xValue = point.x.roundToDecimals(1)
+                val yValue = point.y.roundToDecimals(1)
+                val text = "X:$xValue\nY:$yValue"
+                val layout = textMeasurer.measure(text)
+                val x = offset.x.coerceIn(layout.size.width / 2f, canvasSize.width - layout.size.width / 2f) - layout.size.width / 2f
+                val topLeftOffset = Offset(x, max(offset.y - layout.size.height, 0f))
+                drawText(
+                    layout,
+                    topLeft = topLeftOffset
+                )
+            }
+        }
     }
 }

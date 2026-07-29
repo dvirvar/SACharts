@@ -5,9 +5,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.common.model.ChartValueCoordinate
+
 //For the "RealZoom" feature
 @Composable
 internal fun AxisRow(
@@ -22,9 +24,10 @@ internal fun AxisRow(
 ) {
     Layout(
         modifier = modifier,
-        content = content
+        content = content,
     ) { measurables, constraints ->
-        val placeables = measurables.map { measurable ->
+        val constraints = constraints.copy(0)
+        val placeables = measurables.fastMap { measurable ->
             measurable.measure(constraints)
         }
         val maxHeight = placeables.fastMaxOfOrDefault(0) { it.height }
@@ -57,14 +60,14 @@ internal fun AxisRow(
         modifier = modifier,
         content = content
     ) { measurables, constraints ->
-        val placeables = measurables.map { measurable ->
+        val constraints = constraints.copy(0)
+        val placeables = measurables.fastMap { measurable ->
             measurable.measure(constraints)
         }
         val maxHeight = placeables.fastMaxOfOrDefault(0) { it.height }
         val maxWidthTolerance = constraints.maxWidth + 0.01
 
         layout(constraints.maxWidth, maxHeight) {
-
             placeables.fastForEachIndexed { index, placeable ->
                 val xOffset = values[index].toChartPixelCoordinate(constraints.maxWidth, minXValue, maxXValue, inverted).value
                 if (xOffset in 0.0..maxWidthTolerance) {

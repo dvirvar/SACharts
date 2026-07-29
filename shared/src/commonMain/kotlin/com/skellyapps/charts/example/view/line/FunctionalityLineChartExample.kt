@@ -168,40 +168,39 @@ fun FunctionalityLineChartExample() {
             chartData,
             background = Brush.linearGradient(colors.map {it.copy(0.25f)}),
             zoom = zoom,
-            drawOnEachPoint = { canvasSize, lineTag, index, offset, _ ->
-                val radius = 5.dp.toPx()
-                if (offset.x < -radius || offset.x > canvasSize.width + radius ||
-                    offset.y < -radius || offset.y > canvasSize.height + radius) {
-                    return@LineChart
-                }
-                if (lineTag == blueTag) {
-                    drawCircle(
-                        colors[lineTag],
-                        radius,
-                        offset
-                    )
-                } else {
-                    drawSquare(
-                        colors[lineTag],
-                        offset,
-                        radius * 2f
-                    )
-                }
-                val point = lines[lineTag].points[index]
-                val xValue = point.x.roundToDecimals(1)
-                val yValue = point.y.roundToDecimals(1)
-                val text = "X:$xValue\nY:$yValue"
-                val layout = textMeasurer.measure(text)
-                drawText(
-                    layout,
-                    canvasSize,
-                    offset,
-                    Position.Top,
-                    true
-                )
-            },
             pointClick = pointClick,
             pointDrag = pointDrag
-        )
+        ) { canvasSize, lineTag, index, offset, _ ->
+            val radius = 5.dp.toPx()
+            if (offset.x < -radius || offset.x > canvasSize.width + radius ||
+                offset.y < -radius || offset.y > canvasSize.height + radius) {
+                return@LineChart
+            }
+            if (lineTag == blueTag) {
+                drawCircle(
+                    colors[lineTag],
+                    radius,
+                    offset
+                )
+            } else {
+                drawSquare(
+                    colors[lineTag],
+                    offset,
+                    radius * 2f
+                )
+            }
+            val point = lines[lineTag].points[index]
+            val xValue = point.x.roundToDecimals(1)
+            val yValue = point.y.roundToDecimals(1)
+            val text = "X:$xValue\nY:$yValue"
+            val layout = textMeasurer.measure(text)
+            drawText(
+                layout,
+                canvasSize,
+                offset,
+                Position.Top,
+                true
+            )
+        }
     }
 }

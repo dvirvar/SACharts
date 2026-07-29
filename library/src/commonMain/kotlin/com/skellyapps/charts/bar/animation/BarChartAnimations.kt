@@ -12,13 +12,11 @@ data class BarChartAnimations(
     val growth: Growth? = null
 ) {
     companion object {
-        val none = BarChartAnimations(null)
+        val None = BarChartAnimations(null)
     }
 
     /**
      * Animates bars' height.
-     *
-     * (Works only with BarChartData.Type.Grouped for now)
      */
     class Growth(
         spec: AnimationSpec<Float>,

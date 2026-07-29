@@ -10,7 +10,7 @@ data class DynamicPieChartAnimations(
     val growth: Growth? = null
 ) {
     companion object {
-        val none = DynamicPieChartAnimations(null)
+        val None = DynamicPieChartAnimations(null)
     }
 
     /**

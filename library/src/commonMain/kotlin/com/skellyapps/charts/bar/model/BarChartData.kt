@@ -2,6 +2,7 @@ package com.skellyapps.charts.bar.model
 
 import androidx.annotation.FloatRange
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
@@ -10,11 +11,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.DrawScope.Companion.DefaultBlendMode
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.common.model.ChartPixel
 import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.common.model.GridChartData
+import com.skellyapps.charts.common.model.Position
 
 /**
  * @param yAxis Y-axis of the bar chart
@@ -101,12 +107,13 @@ data class BarChartData(
             override val categoriesSpace: Dp
         ): Type
     }
-
+    @Immutable
     internal data class OffsetCategory(
         val offsets: List<Offset>,
         val tag: Int,
         val customization: Category.Customization
     ) {
+        @Immutable
         internal data class Offset(
             val topLeft: ChartPixel,
             val size: Size,
@@ -148,5 +155,78 @@ data class BarChartData(
         val valueView: @Composable ((Double) -> Unit)? = null
     ): GridChartData.Axis.YAxis {
         override val offset: DpOffset = DpOffset.Zero
+    }
+
+    /**
+     * @param viewPosition How to position the view anchored to the bar
+     * @param viewPositionMirrored On negative values the position will be mirrored
+     * @param viewOffset Offset from the position
+     * @param viewStayInChartBounds True will keep the view inside chart bounds, false will keep the view in its original position
+     * @param view The view to show
+     */
+    class BarHover(
+        val viewPosition: Position,
+        val viewPositionMirrored: Boolean,
+        val viewOffset: DpOffset,
+        val viewStayInChartBounds: Boolean,
+        val view: @Composable (categoryTag: Int, index: Int) -> Unit
+    ) {
+        internal fun getViewOffset(density: Density, canvasSize: IntSize, viewSize: IntSize, viewOffsetInCanvas: OffsetCategory.Offset): IntOffset {
+            val viewOffset = with(density) {
+                IntOffset(viewOffset.x.roundToPx(), viewOffset.y.roundToPx())
+            }
+            var y: Int = viewOffsetInCanvas.topLeft.y.value.fastRoundToInt() + when {
+                Position.Top in viewPosition -> if (viewPositionMirrored && viewOffsetInCanvas.isNegative) {
+                    viewOffsetInCanvas.size.height.fastRoundToInt() + viewOffset.y
+                } else {
+                    -viewSize.height - viewOffset.y
+                }
+                Position.Bottom in viewPosition -> if (viewPositionMirrored && viewOffsetInCanvas.isNegative) {
+                    -viewSize.height - viewOffset.y
+                } else {
+                    viewOffsetInCanvas.size.height.fastRoundToInt() + viewOffset.y
+                }
+                else -> viewOffsetInCanvas.size.height.fastRoundToInt() / 2 - viewSize.height / 2 + viewOffset.y
+            }
+            var x: Int = viewOffsetInCanvas.topLeft.x.value.fastRoundToInt() + when {
+                Position.Left in viewPosition -> -viewSize.width - viewOffset.x
+                Position.Right in viewPosition -> viewOffsetInCanvas.size.width.fastRoundToInt() + viewOffset.x
+                else -> viewOffsetInCanvas.size.width.fastRoundToInt() / 2 - viewSize.width / 2 + viewOffset.x
+            }
+            if (viewStayInChartBounds) {
+                x = x.coerceIn(0, canvasSize.width - viewSize.width)
+                y = y.coerceIn(0, canvasSize.height - viewSize.height)
+            }
+            return IntOffset(x, y)
+        }
+
+        internal fun getViewOffsetHorizontal(density: Density, canvasSize: IntSize, viewSize: IntSize, viewOffsetInCanvas: OffsetCategory.Offset): IntOffset {
+            val viewOffset = with(density) {
+                IntOffset(viewOffset.x.roundToPx(), viewOffset.y.roundToPx())
+            }
+            var y: Int = viewOffsetInCanvas.topLeft.y.value.fastRoundToInt() + when {
+                Position.Top in viewPosition -> -viewSize.height - viewOffset.y
+                Position.Bottom in viewPosition -> viewOffsetInCanvas.size.height.fastRoundToInt() + viewOffset.y
+                else -> viewOffsetInCanvas.size.height.fastRoundToInt() / 2 - viewSize.height / 2 + viewOffset.y
+            }
+            var x: Int = viewOffsetInCanvas.topLeft.x.value.fastRoundToInt() + when {
+                Position.Left in viewPosition -> if (viewPositionMirrored && viewOffsetInCanvas.isNegative) {
+                    viewOffsetInCanvas.size.width.fastRoundToInt() + viewOffset.x
+                } else {
+                    -viewSize.width - viewOffset.x
+                }
+                Position.Right in viewPosition -> if (viewPositionMirrored && viewOffsetInCanvas.isNegative) {
+                    -viewSize.width - viewOffset.x
+                } else {
+                    viewOffsetInCanvas.size.width.fastRoundToInt() + viewOffset.x
+                }
+                else -> viewOffsetInCanvas.size.width.fastRoundToInt() / 2 - viewSize.width / 2 + viewOffset.x
+            }
+            if (viewStayInChartBounds) {
+                x = x.coerceIn(0, canvasSize.width - viewSize.width)
+                y = y.coerceIn(0, canvasSize.height - viewSize.height)
+            }
+            return IntOffset(x, y)
+        }
     }
 }

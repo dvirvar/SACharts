@@ -1,5 +1,5 @@
 # SACharts 📊
-**SACharts** is a highly customizable and interactive charting library built from the ground up for **Compose Multiplatform**.
+**SACharts** is a highly customizable and interactive charting library for small datasets built from the ground up for **Compose Multiplatform**.
 
 Supports Android, iOS, Desktop, and Web.
 
@@ -324,8 +324,6 @@ private val yAxis = BarChartData.YAxis(
 Add animation:
 
 It's your own choice when to animate and how.
-
-(Growth doesn't work on stacked bars for now)
 ```kotlin
 val animations = retain { BarChartAnimations(
         growth = BarChartAnimations.Growth(tween(2500), 1f)
@@ -340,6 +338,25 @@ BarChart(
   modifier = Modifier.fillMaxWidth().height(300.dp),
   data = chartData,
   animations = animations // <-- Add this parameter
+)
+```
+Add a view(popup) on bar hover:
+```kotlin
+private val barHover = BarChartData.BarHover(
+    viewPosition = Position.Top,//How the view will be anchored to the bar
+    viewPositionMirrored = true,//On negative values the position will be mirrored
+    viewOffset = DpOffset.Zero,//How far from the position the view will be anchored
+    viewStayInChartBounds = true//Keep view in chart bounds
+) { categoryTag, index ->
+    val value = yAxis.categories.[categoryTag].values[index]
+    Box(Modifier.background(colors[categoryTag].copy(0.9f), CircleShape).padding(8.dp), Alignment.Center) {
+        Text(value.roundToDecimals(1).toString(), color = Color.White)
+    }
+}
+BarChart(
+    modifier = Modifier.fillMaxWidth().height(300.dp),
+    data = chartData,
+    barHover = barHover // <-- Add this parameter
 )
 ```
 Add labels to bars:

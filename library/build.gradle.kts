@@ -50,7 +50,7 @@ mavenPublishing {
 
     pom {
         name = "SACharts"
-        description = "KMP charts library"
+        description = "KMP charts library for small datasets"
         inceptionYear = "2026"
         url = "https://github.com/dvirvar/SACharts"
 

@@ -68,45 +68,15 @@ interface HorizontalBarChartDrawScope : DrawScope {
     ) {
         val textWidth = textLayoutResult.size.width
         val textHeight = textLayoutResult.size.height
-        var x: Float
-        var y: Float
-        when (position) {
-            Position.TopLeft -> {
-                x = if (isNegative) barRect.right - textWidth else barRect.left
-                y = barRect.top
-            }
-            Position.Top -> {
-                x = barRect.left + barRect.width / 2f - textWidth / 2f
-                y = barRect.top
-            }
-            Position.TopRight -> {
-                x = if (isNegative) barRect.left else barRect.right - textWidth
-                y = barRect.top
-            }
-            Position.MiddleLeft -> {
-                x = if (isNegative) barRect.right - textWidth else barRect.left
-                y = barRect.top + barRect.height / 2f - textHeight / 2f
-            }
-            Position.Middle -> {
-                x = barRect.left + barRect.width / 2f - textWidth / 2f
-                y = barRect.top + barRect.height / 2f - textHeight / 2f
-            }
-            Position.MiddleRight -> {
-                x = if (isNegative) barRect.left else barRect.right - textWidth
-                y = barRect.top + barRect.height / 2f - textHeight / 2f
-            }
-            Position.BottomLeft -> {
-                x = if (isNegative) barRect.right - textWidth else barRect.left
-                y = barRect.bottom - textHeight
-            }
-            Position.Bottom -> {
-                x = barRect.left + barRect.width / 2f - textWidth / 2f
-                y = barRect.bottom - textHeight
-            }
-            Position.BottomRight -> {
-                x = if (isNegative) barRect.left else barRect.right - textWidth
-                y = barRect.bottom - textHeight
-            }
+        val y: Float = when {
+            Position.Top in position -> barRect.top
+            Position.Bottom in position -> barRect.bottom - textHeight
+            else -> barRect.top + barRect.height / 2f - textHeight / 2f
+        }
+        val x: Float = when {
+            Position.Left in position -> if (isNegative) barRect.right - textWidth else barRect.left
+            Position.Right in position -> if (isNegative) barRect.left else barRect.right - textWidth
+            else -> barRect.left + barRect.width / 2f - textWidth / 2f
         }
         drawText(
             textLayoutResult,

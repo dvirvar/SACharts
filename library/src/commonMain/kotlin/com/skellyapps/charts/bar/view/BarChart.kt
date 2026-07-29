@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -15,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
@@ -24,19 +26,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastFilter
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.zIndex
 import com.skellyapps.charts.bar.animation.BarChartAnimations
+import com.skellyapps.charts.bar.extension.binarySearch
 import com.skellyapps.charts.bar.graphics.BarChartDrawScope
 import com.skellyapps.charts.bar.graphics.BarChartDrawScopeImpl
 import com.skellyapps.charts.bar.model.BarChartData
+import com.skellyapps.charts.bar.model.TaggedOffsetEqualityPolicy
+import com.skellyapps.charts.common.extension.`if`
 import com.skellyapps.charts.common.model.ChartPixel
 import com.skellyapps.charts.common.model.ChartPixelCoordinate
 import com.skellyapps.charts.common.model.ChartValue
@@ -55,6 +62,7 @@ internal const val barsZIndex = dividersZIndex - 5f
  * @param data [BarChartData]
  * @param background The background of the inside of the chart
  * @param animations To enable animations
+ * @param clipToBounds To enable clip to bounds
  * @param drawOnEachValue To draw on each value on each category
  */
 @Composable
@@ -62,36 +70,36 @@ fun BarChart(
     modifier: Modifier,
     data: BarChartData,
     background: Brush = SolidColor(Color.Transparent),
-    animations: BarChartAnimations = BarChartAnimations.none,
-    drawOnEachValue: (BarChartDrawScope.(canvasSize: Size, categoryTag: Int, index: Int, barRect: Rect) -> Unit)? = null
+    clipToBounds: Boolean = true,
+    animations: BarChartAnimations = BarChartAnimations.None,
+    barHover: BarChartData.BarHover? = null,
+    drawOnEachValue: (BarChartDrawScope.(canvasSize: Size, categoryTag: Int, index: Int, barRect: Rect, isNegative: Boolean) -> Unit)? = null
 ) {
     val density = LocalDensity.current
     var canvasSize by remember { mutableStateOf(IntSize(0,0)) }
 //    var canvasZoom by remember { mutableStateOf(Offset(1f,1f)) }
 //    var canvasOffset by remember { mutableStateOf(Offset.Zero) }
-    val yAxisOffset = Offset.Zero
+    val yAxisOffset = remember { Offset.Zero }
     val xAxisOffset = remember(data.xAxisOffset, density) {
         with(density) {
             Offset(data.xAxisOffset.x.toPx(), data.xAxisOffset.y.toPx())
         }
     }
-    val minXValue = ChartValueCoordinate(0.0)
+    val minXValue = remember { ChartValueCoordinate(0.0) }
     val maxXValue by remember(data.yAxis.categories) {
         derivedStateOf {
             ChartValueCoordinate(data.yAxis.categories.fastFilter { it.values.isNotEmpty() }.maxOfOrNull { it.values.size }?.toDouble() ?: 0.0)
         }
     }
-    val xAxisViewport by remember(xAxisOffset, maxXValue) {
-        derivedStateOf {
-            val x = ChartPixelCoordinate(0f/*canvasOffset.x*/).toChartValueCoordinate(canvasSize.width, xAxisOffset, minXValue, maxXValue, false)
-            val maxX = ChartPixelCoordinate(/*canvasOffset.x +*/ canvasSize.width.toFloat() /*/ canvasZoom.x*/).toChartValueCoordinate(canvasSize.width, xAxisOffset, minXValue, maxXValue, false)
-            ChartValue(x, maxX)
-        }
+    val xAxisViewport = remember(canvasSize.width,xAxisOffset, maxXValue) {
+        val x = ChartPixelCoordinate(0f/*canvasOffset.x*/).toChartValueCoordinate(canvasSize.width, xAxisOffset, minXValue, maxXValue, false)
+        val maxX = ChartPixelCoordinate(/*canvasOffset.x +*/ canvasSize.width.toFloat() /*/ canvasZoom.x*/).toChartValueCoordinate(canvasSize.width, xAxisOffset, minXValue, maxXValue, false)
+        ChartValue(x, maxX)
     }
     val yAxisMinValue = remember(data.yAxis.minValue) {
         ChartValueCoordinate(data.yAxis.minValue ?: 0.0)
     }
-    val yAxisMaxValue by remember(data.yAxis.maxValue, data.yAxis.categories, data.yAxis.type) {
+    val yAxisMaxValue by remember(data.yAxis.maxValue, data.yAxis.type, data.yAxis.categories) {
         derivedStateOf {
             ChartValueCoordinate(
                 if (data.yAxis.maxValue != null) {
@@ -122,12 +130,10 @@ fun BarChart(
             )
         }
     }
-    val yAxisViewport by remember(yAxisMinValue, yAxisMaxValue) {
-        derivedStateOf {
-            val y = ChartPixelCoordinate(/*canvasOffset.y +*/ canvasSize.height.toFloat() /*/ canvasZoom.y*/).toChartValueCoordinate(canvasSize.height, yAxisOffset, yAxisMinValue, yAxisMaxValue, true)
-            val maxY = ChartPixelCoordinate(0f/*canvasOffset.y*/).toChartValueCoordinate(canvasSize.height, yAxisOffset, yAxisMinValue, yAxisMaxValue, true)
-            ChartValue(y, maxY)
-        }
+    val yAxisViewport = remember(canvasSize.height, yAxisMinValue, yAxisMaxValue) {
+        val y = ChartPixelCoordinate(/*canvasOffset.y +*/ canvasSize.height.toFloat() /*/ canvasZoom.y*/).toChartValueCoordinate(canvasSize.height, yAxisOffset, yAxisMinValue, yAxisMaxValue, true)
+        val maxY = ChartPixelCoordinate(0f/*canvasOffset.y*/).toChartValueCoordinate(canvasSize.height, yAxisOffset, yAxisMinValue, yAxisMaxValue, true)
+        ChartValue(y, maxY)
     }
     val yAxisValues = remember(yAxisMinValue, yAxisMaxValue, data.yAxis.value) {
         data.yAxis.value.getValues(yAxisMinValue, yAxisMaxValue)
@@ -141,22 +147,16 @@ fun BarChart(
         val maxValue = maxXValue.value.toFloat()
         (canvasSize.width.toFloat() - xAxisOffset.x - xAxisOffset.y - ((maxValue - 1f) * categoriesSpace)) / maxValue
     }
-    val bottomAxisValues: List<ChartValueCoordinate> by remember(canvasSize.width, maxXValue, xAxisOffset, xAxisViewport) {
-        derivedStateOf {
-            if (canvasSize.width == 0) {
-                listOf()
-            } else {
-                val values = mutableListOf<ChartValueCoordinate>()
-                val offset = ChartPixelCoordinate(categoryWidth / 2f).toChartValueCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, false)
-                val categoriesOffset = ChartPixelCoordinate(categoryWidth + categoriesSpace).toChartValueCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, false).value
-                for (i in minXValue.value.toInt()..maxXValue.value.toInt()) {
-                    values.add(ChartValueCoordinate(offset.value + (categoriesOffset * i)))
-                }
-                values
-            }
+    val bottomAxisValues: List<ChartValueCoordinate> = remember(canvasSize.width, maxXValue, xAxisOffset, xAxisViewport) {
+        val values = mutableListOf<ChartValueCoordinate>()
+        val offset = ChartPixelCoordinate(categoryWidth / 2f).toChartValueCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, false)
+        val categoriesOffset = ChartPixelCoordinate(categoryWidth + categoriesSpace).toChartValueCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, false).value
+        for (i in minXValue.value.toInt()..maxXValue.value.toInt()) {
+            values.add(ChartValueCoordinate(offset.value + (categoriesOffset * i)))
         }
+        values
     }
-    val barWidth by remember(categoryWidth, data.yAxis.categories, data.yAxis.type) {
+    val barWidth by remember(categoryWidth, data.yAxis.type, data.yAxis.categories) {
         derivedStateOf {
             when (val type = data.yAxis.type) {
                 is BarChartData.Type.Grouped -> {
@@ -230,6 +230,7 @@ fun BarChart(
             offsetCategories
         }
     }
+    var hoveredBar by remember { mutableStateOf(null, TaggedOffsetEqualityPolicy) }
 
     Row(modifier) {
         if (data.isLeftYAxis) {
@@ -270,26 +271,58 @@ fun BarChart(
                 if (!data.isLeftYAxis) yAxisValues else listOf(),
                 bottomAxisValues
             ) {
-                Box(Modifier
+                Box(
+                    Modifier
                         .fillMaxSize()
                         .zIndex(barsZIndex)
-                        .clipToBounds()
-                        .drawBehind {
+                        .`if`(clipToBounds, Modifier.clipToBounds())
+                        .`if`(barHover != null, Modifier.pointerInput(canvasSize, offsetCategories) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent()
+                                    val mousePosition = event.changes.first().position
+                                    when(event.type) {
+                                        PointerEventType.Move -> hoveredBar = offsetCategories.binarySearch(mousePosition, data.yAxis.type, true)
+                                        PointerEventType.Exit -> hoveredBar = null
+                                    }
+                                }
+                            }
+                        })
+                        .drawWithContent {
                             val path = Path()
-                            offsetCategories.fastForEach { category ->
-                                category.offsets.fastForEach {
-                                    val rect = if (animations.growth != null && data.yAxis.type is BarChartData.Type.Grouped) {
-                                        animations.growth.getRect(it)
+                            val baseValueYPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, true).value
+                            offsetCategories.fastForEachIndexed { categoryIndex, category ->
+                                category.offsets.fastForEachIndexed { offsetIndex, offset ->
+                                    val rect = if (animations.growth != null) {
+                                        when(data.yAxis.type) {
+                                            is BarChartData.Type.Grouped -> animations.growth.getRect(offset)
+                                            is BarChartData.Type.Stacked -> {
+                                                var y = baseValueYPixel
+                                                if (offset.isNegative) {
+                                                    (0..<categoryIndex).forEach {
+                                                        val height = offsetCategories[it].offsets.getOrNull(offsetIndex)?.size?.height ?: return@forEach
+                                                        y += height * animations.growth.value
+                                                    }
+                                                } else {
+                                                    (0..categoryIndex).forEach {
+                                                        val height = offsetCategories[it].offsets.getOrNull(offsetIndex)?.size?.height ?: return@forEach
+                                                        y -= height * animations.growth.value
+                                                    }
+                                                }
+                                                val height = offset.size.height * animations.growth.value
+                                                Rect(offset.topLeft.offset.copy(y = y), offset.size.copy(height = height))
+                                            }
+                                        }
                                     } else {
-                                        Rect(it.topLeft.offset, it.size)
+                                        Rect(offset.topLeft.offset, offset.size)
                                     }
                                     path.addRoundRect(
                                         RoundRect(
                                             rect,
-                                            topLeft = if (it.isNegative) category.customization.bottomLeftCornerRadius else category.customization.topLeftCornerRadius,
-                                            topRight = if (it.isNegative) category.customization.bottomRightCornerRadius else category.customization.topRightCornerRadius,
-                                            bottomRight = if (it.isNegative) category.customization.topRightCornerRadius else category.customization.bottomRightCornerRadius,
-                                            bottomLeft = if (it.isNegative) category.customization.topLeftCornerRadius else category.customization.bottomLeftCornerRadius,
+                                            topLeft = if (offset.isNegative) category.customization.bottomLeftCornerRadius else category.customization.topLeftCornerRadius,
+                                            topRight = if (offset.isNegative) category.customization.bottomRightCornerRadius else category.customization.topRightCornerRadius,
+                                            bottomRight = if (offset.isNegative) category.customization.topRightCornerRadius else category.customization.bottomRightCornerRadius,
+                                            bottomLeft = if (offset.isNegative) category.customization.topLeftCornerRadius else category.customization.bottomLeftCornerRadius,
                                         )
                                     )
                                 }
@@ -305,26 +338,61 @@ fun BarChart(
                             }
                             drawOnEachValue?.let {
                                 with(BarChartDrawScopeImpl(this)) {
-                                    offsetCategories.fastForEach { category ->
-                                        category.offsets.fastForEachIndexed { index, offsetCategory ->
-                                            val rect = if (animations.growth != null && data.yAxis.type is BarChartData.Type.Grouped) {
-                                                animations.growth.getRect(offsetCategory)
+                                    offsetCategories.fastForEachIndexed { categoryIndex, category ->
+                                        category.offsets.fastForEachIndexed { offsetIndex, offset ->
+                                            val rect = if (animations.growth != null) {
+                                                when(data.yAxis.type) {
+                                                    is BarChartData.Type.Grouped -> animations.growth.getRect(offset)
+                                                    is BarChartData.Type.Stacked -> {
+                                                        var y = baseValueYPixel
+                                                        if (offset.isNegative) {
+                                                            (0..<categoryIndex).forEach {
+                                                                val height = offsetCategories[it].offsets.getOrNull(offsetIndex)?.size?.height ?: return@forEach
+                                                                y += height * animations.growth.value
+                                                            }
+                                                        } else {
+                                                            (0..categoryIndex).forEach {
+                                                                val height = offsetCategories[it].offsets.getOrNull(offsetIndex)?.size?.height ?: return@forEach
+                                                                y -= height * animations.growth.value
+                                                            }
+                                                        }
+                                                        val height = offset.size.height * animations.growth.value
+                                                        Rect(offset.topLeft.offset.copy(y = y), offset.size.copy(height = height))
+                                                    }
+                                                }
                                             } else {
-                                                Rect(offsetCategory.topLeft.offset, offsetCategory.size)
+                                                Rect(offset.topLeft.offset, offset.size)
                                             }
                                             drawOnEachValue(
                                                 this,
                                                 size,
                                                 category.tag,
-                                                index,
-                                                rect
+                                                offsetIndex,
+                                                rect,
+                                                offset.isNegative
                                             )
                                         }
                                     }
                                 }
                             }
+                            drawContent()
+                        }) {
+                    if (barHover != null && hoveredBar != null) {
+                        var viewSize by remember { mutableStateOf(IntSize.Zero) }
+                        Box(Modifier
+                            .onSizeChanged {
+                                viewSize = it
+                            }
+                            .offset {
+                                hoveredBar?.let {
+                                    barHover.getViewOffset(this, canvasSize, viewSize, it.offset)
+                                } ?: IntOffset.Zero
+                            }
+                        ) {
+                            barHover.view(hoveredBar!!.categoryTag, hoveredBar!!.index)
                         }
-                )
+                    }
+                }
             }
             data.bottomAxis?.let { axis ->
                 axis.valueView?.let {

@@ -73,45 +73,15 @@ interface LineChartDrawScope : DrawScope {
     ) {
         val textWidth = textLayoutResult.size.width
         val textHeight = textLayoutResult.size.height
-        var x: Float
-        var y: Float
-        when (position) {
-            Position.TopLeft -> {
-                x = offset.x - textWidth
-                y = offset.y - textHeight
-            }
-            Position.Top -> {
-                x = offset.x - textWidth / 2f
-                y = offset.y - textHeight
-            }
-            Position.TopRight -> {
-                x = offset.x
-                y = offset.y - textHeight
-            }
-            Position.MiddleLeft -> {
-                x = offset.x - textWidth
-                y = offset.y - textHeight / 2f
-            }
-            Position.Middle -> {
-                x = offset.x - textWidth / 2f
-                y = offset.y - textHeight / 2f
-            }
-            Position.MiddleRight -> {
-                x = offset.x
-                y = offset.y - textHeight / 2f
-            }
-            Position.BottomLeft -> {
-                x = offset.x - textWidth
-                y = offset.y
-            }
-            Position.Bottom -> {
-                x = offset.x - textWidth / 2f
-                y = offset.y
-            }
-            Position.BottomRight -> {
-                x = offset.x
-                y = offset.y
-            }
+        var y: Float = when {
+            Position.Top in position -> offset.y - textHeight
+            Position.Bottom in position -> offset.y
+            else -> offset.y - textHeight / 2f
+        }
+        var x: Float = when {
+            Position.Left in position -> offset.x - textWidth
+            Position.Right in position -> offset.x
+            else -> offset.x - textWidth / 2f
         }
         if (stayInCanvasBounds) {
             x = x.coerceIn(0f, canvasSize.width - textWidth)

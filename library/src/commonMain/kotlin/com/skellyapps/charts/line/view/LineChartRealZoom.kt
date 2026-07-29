@@ -205,30 +205,24 @@ fun LineChartRealZoom(
             )
         }
     }
-    val leftOffsetLines by remember(data.leftAxis?.lines, xAxisOffset, leftAxisYOffset, minXValue, maxXValue, leftAxisMinYValue, leftAxisMaxYValue) {
+    val leftOffsetLines by remember(xAxisOffset, leftAxisYOffset, minXValue, maxXValue, leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis?.lines) {
         derivedStateOf {
             data.leftAxis?.lines?.toOffsetLines(canvasSize, xAxisOffset, leftAxisYOffset!!, minXValue, maxXValue, leftAxisMinYValue, leftAxisMaxYValue)
         }
     }
-    val rightOffsetLines by remember(data.rightAxis?.lines, xAxisOffset, rightAxisYOffset, minXValue, maxXValue, rightAxisMinYValue, rightAxisMaxYValue) {
+    val rightOffsetLines by remember(xAxisOffset, rightAxisYOffset, minXValue, maxXValue, rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis?.lines) {
         derivedStateOf {
             data.rightAxis?.lines?.toOffsetLines(canvasSize, xAxisOffset, rightAxisYOffset!!, minXValue, maxXValue, rightAxisMinYValue, rightAxisMaxYValue)
         }
     }
-    val leftAxisValues by remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis?.value) {
-        derivedStateOf {
-            data.leftAxis?.value?.getValues(leftAxisMinYValue, leftAxisMaxYValue) ?: listOf()
-        }
+    val leftAxisValues = remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis?.value) {
+        data.leftAxis?.value?.getValues(leftAxisMinYValue, leftAxisMaxYValue) ?: listOf()
     }
-    val rightAxisValues by remember(rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis?.value) {
-        derivedStateOf {
-            data.rightAxis?.value?.getValues(rightAxisMinYValue, rightAxisMaxYValue) ?: listOf()
-        }
+    val rightAxisValues = remember(rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis?.value) {
+        data.rightAxis?.value?.getValues(rightAxisMinYValue, rightAxisMaxYValue) ?: listOf()
     }
-    val bottomAxisValues: List<ChartValueCoordinate> by remember(minXValue, maxXValue, data.bottomAxis?.value) {
-        derivedStateOf {
-            data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf()
-        }
+    val bottomAxisValues: List<ChartValueCoordinate> = remember(minXValue, maxXValue, data.bottomAxis?.value) {
+        data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf()
     }
     val clipToBounds by remember {
         derivedStateOf {

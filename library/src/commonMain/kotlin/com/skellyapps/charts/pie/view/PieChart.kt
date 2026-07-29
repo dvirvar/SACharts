@@ -9,6 +9,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.util.fastCoerceIn
+import androidx.compose.ui.util.fastForEach
 import com.skellyapps.charts.pie.animation.PieChartAnimations
 import com.skellyapps.charts.pie.extension.drawBorderInside
 import com.skellyapps.charts.pie.graphics.PieChartDrawScope
@@ -28,7 +30,7 @@ import kotlin.math.sin
 fun PieChart(
     modifier: Modifier,
     data: PieChartData,
-    animations: PieChartAnimations = PieChartAnimations.none,
+    animations: PieChartAnimations = PieChartAnimations.None,
     drawOnEachSlice: (PieChartDrawScope.(sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double) -> Unit)? = null
 ) {
     Canvas(modifier) {
@@ -67,8 +69,8 @@ fun PieChart(
 
             //Clamp the text positions so they never exceed canvas bounds
             //Left bound: edgePadding | Right bound: size.width - textWidth - edgePadding
-            val clampedTextX = idealTextX.coerceIn(edgePadding, size.width - textWidth - edgePadding)
-            val clampedTextY = idealTextY.coerceIn(edgePadding, size.height - textHeight - edgePadding)
+            val clampedTextX = idealTextX.fastCoerceIn(edgePadding, size.width - textWidth - edgePadding)
+            val clampedTextY = idealTextY.fastCoerceIn(edgePadding, size.height - textHeight - edgePadding)
 
             //Adjust the extension line backward from the clamped text position
             val adjustedFinalLineEndX = if (isRightSide) clampedTextX - linePadding else clampedTextX + textWidth + linePadding
@@ -104,7 +106,7 @@ fun PieChart(
         }
 
         if (data.slices.size == 1) {
-            val slice = data.slices.first()
+            val slice = data.slices[0]
             val progress = if (animations.growth != null) animations.growth.value else 1f
             val animatedSweepAngle = 360f * progress
 
@@ -151,7 +153,7 @@ fun PieChart(
             var startAngle = data.startAngle + data.sliceSpacingDegrees / 2f
             val animationValue = if (animations.growth != null) animations.growth.value else 1f
 
-            data.slices.forEach { slice ->
+            data.slices.fastForEach { slice ->
                 val sweepAngle = (((slice.value / totalValue) * 360.0).toFloat() - data.sliceSpacingDegrees) * animationValue
 
                 val startRad = startAngle * (PI / 180.0)

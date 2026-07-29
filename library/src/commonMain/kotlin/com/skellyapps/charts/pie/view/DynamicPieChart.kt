@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.util.fastForEach
 import com.skellyapps.charts.pie.animation.DynamicPieChartAnimations
 import com.skellyapps.charts.pie.extension.drawBorderInside
 import com.skellyapps.charts.pie.graphics.PieChartDrawScope
@@ -34,7 +35,7 @@ import kotlin.math.sin
 fun DynamicPieChart(
     modifier: Modifier,
     data: DynamicPieChartData,
-    animations: DynamicPieChartAnimations = DynamicPieChartAnimations.none,
+    animations: DynamicPieChartAnimations = DynamicPieChartAnimations.None,
     drawOnEachSlice: (PieChartDrawScope.(sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double) -> Unit)? = null
 ) {
     Canvas(modifier) {
@@ -55,7 +56,7 @@ fun DynamicPieChart(
 
             var currentStartAngle = data.startAngle + (if (data.slices.size > 1) data.sliceSpacingDegrees / 2f else 0f)
 
-            data.slices.forEach { slice ->
+            data.slices.fastForEach { slice ->
                 val sweepAngle = if (data.slices.size == 1) 360f else {
                     ((slice.value / totalValue) * 360.0).toFloat() - data.sliceSpacingDegrees
                 }
@@ -209,7 +210,7 @@ fun DynamicPieChart(
             var startAngle = data.startAngle + data.sliceSpacingDegrees / 2f
             val animationValue = if (animations.growth != null) animations.growth.value else 1f
 
-            data.slices.forEach { slice ->
+            data.slices.fastForEach { slice ->
                 val sweepAngle = (((slice.value / totalValue) * 360.0).toFloat() - data.sliceSpacingDegrees) * animationValue
 
                 val startRad = startAngle * (PI / 180.0)

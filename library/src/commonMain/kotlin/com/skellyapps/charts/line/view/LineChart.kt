@@ -71,6 +71,7 @@ internal const val linesZIndex = dividersZIndex + 10f
  * @param modifier Mandatory modifier to specify size
  * @param data [LineChartData]
  * @param background The background of the inside of the chart
+ * @param enforceClipToBounds Clip to bounds happen only when zooming, this parameter helps if you always need to clip to bounds
  * @param zoom To enable zoom
  * @param animations To enable animations
  * @param drawOnEachPoint To draw on each point on each line
@@ -83,8 +84,12 @@ fun LineChart(
     modifier: Modifier,
     data: LineChartData,
     background: Brush = SolidColor(Color.Transparent),
+    enforceClipToBounds: Boolean = false,
     zoom: Zoom? = null,
-    animations: LineChartAnimations = LineChartAnimations.none,
+    animations: LineChartAnimations = LineChartAnimations.None,
+    pointClick: LineChartData.PointClick? = null,
+    pointDrag: LineChartData.PointDrag? = null,
+    pointDragAfterLongPress: LineChartData.PointDrag? = null,
     /**
      * For example drawing circles on points:
      * ```
@@ -95,9 +100,6 @@ fun LineChart(
      * ```
      */
     drawOnEachPoint: (LineChartDrawScope.(canvasSize: Size, lineTag: Int, index: Int, offset: Offset, animatedYPixel: Float) -> Unit)? = null,
-    pointClick: LineChartData.PointClick? = null,
-    pointDrag: LineChartData.PointDrag? = null,
-    pointDragAfterLongPress: LineChartData.PointDrag? = null,
 ) {
     val density = LocalDensity.current
     var canvasSize by remember { mutableStateOf(IntSize(0,0)) }
@@ -240,34 +242,28 @@ fun LineChart(
             }
         }
     }
-    val leftOffsetLines by remember(data.leftAxis?.lines, xAxisViewport, leftAxisYViewport) {
+    val leftOffsetLines by remember(xAxisViewport, leftAxisYViewport, data.leftAxis?.lines) {
         derivedStateOf {
             data.leftAxis?.lines?.toOffsetLines(canvasSize, xAxisViewport.x, xAxisViewport.y, leftAxisYViewport.x, leftAxisYViewport.y)
         }
     }
-    val rightOffsetLines by remember(data.rightAxis?.lines, xAxisViewport, rightAxisYViewport) {
+    val rightOffsetLines by remember(xAxisViewport, rightAxisYViewport, data.rightAxis?.lines) {
         derivedStateOf {
             data.rightAxis?.lines?.toOffsetLines(canvasSize, xAxisViewport.x, xAxisViewport.y, rightAxisYViewport.x, rightAxisYViewport.y)
         }
     }
-    val leftAxisValues by remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis?.value) {
-        derivedStateOf {
-            data.leftAxis?.value?.getValues(leftAxisMinYValue, leftAxisMaxYValue) ?: listOf()
-        }
+    val leftAxisValues = remember(leftAxisMinYValue, leftAxisMaxYValue, data.leftAxis?.value) {
+        data.leftAxis?.value?.getValues(leftAxisMinYValue, leftAxisMaxYValue) ?: listOf()
     }
-    val rightAxisValues by remember(rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis?.value) {
-        derivedStateOf {
-            data.rightAxis?.value?.getValues(rightAxisMinYValue, rightAxisMaxYValue) ?: listOf()
-        }
+    val rightAxisValues = remember(rightAxisMinYValue, rightAxisMaxYValue, data.rightAxis?.value) {
+        data.rightAxis?.value?.getValues(rightAxisMinYValue, rightAxisMaxYValue) ?: listOf()
     }
-    val bottomAxisValues: List<ChartValueCoordinate> by remember(minXValue, maxXValue, data.bottomAxis?.value) {
-        derivedStateOf {
-            data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf()
-        }
+    val bottomAxisValues: List<ChartValueCoordinate> = remember(minXValue, maxXValue, data.bottomAxis?.value) {
+        data.bottomAxis?.value?.getValues(minXValue, maxXValue) ?: listOf()
     }
-    val clipToBounds by remember {
+    val clipToBounds by remember(enforceClipToBounds) {
         derivedStateOf {
-            canvasZoom.x != 1f || canvasZoom.y != 1f
+            canvasZoom.x != 1f || canvasZoom.y != 1f || enforceClipToBounds
         }
     }
     var clickedPoint by remember { mutableStateOf<ClickedPoint?>(null) }

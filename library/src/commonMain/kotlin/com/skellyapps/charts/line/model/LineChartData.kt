@@ -2,6 +2,7 @@ package com.skellyapps.charts.line.model
 
 import androidx.annotation.FloatRange
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -212,7 +213,7 @@ data class LineChartData(
             ): this(SolidColor(color), alpha, colorFilter, blendMode)
         }
     }
-
+    @Immutable
     internal data class OffsetLine(
         val offsets: List<ChartPixel>,
         val pointsOrder: Line.PointsOrder,
@@ -286,45 +287,15 @@ data class LineChartData(
             val viewOffset = with(density) {
                 IntOffset(viewOffset.x.roundToPx(), viewOffset.y.roundToPx())
             }
-            var x: Int
-            var y: Int
-            when (viewPosition) {
-                Position.TopLeft -> {
-                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width - viewOffset.x
-                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height - viewOffset.y
-                }
-                Position.Top -> {
-                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
-                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height - viewOffset.y
-                }
-                Position.TopRight -> {
-                    x = viewOffsetInCanvas.x.value.fastRoundToInt() + viewOffset.x
-                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height - viewOffset.y
-                }
-                Position.MiddleLeft -> {
-                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width - viewOffset.x
-                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
-                }
-                Position.Middle -> {
-                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
-                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
-                }
-                Position.MiddleRight -> {
-                    x = viewOffsetInCanvas.x.value.fastRoundToInt() + viewOffset.x
-                    y = viewOffsetInCanvas.y.value.fastRoundToInt() - viewSize.height / 2 + viewOffset.y
-                }
-                Position.BottomLeft -> {
-                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width - viewOffset.x
-                    y = viewOffsetInCanvas.y.value.fastRoundToInt() + viewOffset.y
-                }
-                Position.Bottom -> {
-                    x = viewOffsetInCanvas.x.value.fastRoundToInt() - viewSize.width / 2 + viewOffset.x
-                    y = viewOffsetInCanvas.y.value.fastRoundToInt() + viewOffset.y
-                }
-                Position.BottomRight -> {
-                    x = viewOffsetInCanvas.x.value.fastRoundToInt() + viewOffset.x
-                    y = viewOffsetInCanvas.y.value.fastRoundToInt() + viewOffset.y
-                }
+            var y: Int = viewOffsetInCanvas.y.value.fastRoundToInt() + when {
+                Position.Top in viewPosition -> -viewSize.height - viewOffset.y
+                Position.Bottom in viewPosition -> viewOffset.y
+                else -> -viewSize.height / 2 + viewOffset.y
+            }
+            var x: Int = viewOffsetInCanvas.x.value.fastRoundToInt() + when {
+                Position.Left in viewPosition -> -viewSize.width - viewOffset.x
+                Position.Right in viewPosition -> viewOffset.x
+                else -> -viewSize.width / 2 + viewOffset.x
             }
             if (viewStayInChartBounds) {
                 x = x.coerceIn(0, canvasSize.width - viewSize.width)

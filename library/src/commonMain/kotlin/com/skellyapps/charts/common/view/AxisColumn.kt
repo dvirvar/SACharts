@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.util.fastForEachIndexed
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastMaxOfOrDefault
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.common.model.ChartValueCoordinate
@@ -26,7 +27,8 @@ internal fun AxisColumn(
         modifier = modifier,
         content = content
     ) { measurables, constraints ->
-        val placeables = measurables.map { measurable ->
+        val constraints = constraints.copy(minHeight = 0)
+        val placeables = measurables.fastMap { measurable ->
             measurable.measure(constraints)
         }
         val maxWidth = placeables.fastMaxOfOrDefault(0) { it.width }
@@ -64,7 +66,8 @@ internal fun AxisColumn(
         modifier = modifier,
         content = content
     ) { measurables, constraints ->
-        val placeables = measurables.map { measurable ->
+        val constraints = constraints.copy(minHeight = 0)
+        val placeables = measurables.fastMap { measurable ->
             measurable.measure(constraints)
         }
         val maxWidth = placeables.fastMaxOfOrDefault(0) { it.width }

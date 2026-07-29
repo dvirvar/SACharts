@@ -16,7 +16,7 @@ data class LineChartAnimations(
     val reveal: Reveal? = null
 ) {
     companion object {
-        val none = LineChartAnimations(null, null)
+        val None = LineChartAnimations(null, null)
     }
     /**
      * Animates the lines by their y-axis from the height of the x-axis.
