@@ -96,6 +96,7 @@ fun LineChart(
      * val highOffsetStart = ChartValue(0.0, 60.0).toOffset(isLeftAxis = true)
      * if (highOffsetStart.y >= 0f && highOffsetStart.y <= size.height) {
      *  val highOffsetEnd = Offset(size.width, highOffsetStart.y)
+     *  //Measuring inside draw function is bad practice, cache the text layout outside of the draw function
      *  drawText(textMeasurer.measure("High"), highOffsetEnd, Position.TopLeft, true)
      *  drawLine(Color.Red, highOffsetStart, highOffsetEnd)
      * }

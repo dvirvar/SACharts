@@ -2,6 +2,8 @@ package com.skellyapps.charts.pie.view
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -33,9 +35,28 @@ fun PieChart(
     animations: PieChartAnimations = PieChartAnimations.None,
     drawOnEachSlice: (DrawScope.(sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double) -> Unit)? = null
 ) {
+    val totalValue by remember(data.slices) {
+        derivedStateOf {
+            data.slices.sumOf { it.value }
+        }
+    }
+    val textLayouts by remember(data.slices, data.labelCustomization) {
+        derivedStateOf {
+            if (data.labelCustomization != null) {
+                buildMap {
+                    data.slices.fastForEach {
+                        if (it.label != null) {
+                            this[it.label] = data.labelCustomization.textMeasurer.measure(it.label)
+                        }
+                    }
+                }
+            } else {
+                mapOf()
+            }
+        }
+    }
     val path = remember { Path() }
     Canvas(modifier) {
-        val totalValue = data.slices.sumOf { it.value }
         val centerX = center.x
         val centerY = center.y
         val outerRadius = minOf(centerX, centerY) * data.outerRadiusPercentage * if (animations.scale != null) animations.scale.value else 1f
@@ -53,7 +74,7 @@ fun PieChart(
             val lineStartX = (centerX + outerRadius * cos(middleRad)).toFloat()
             val lineStartY = (centerY + outerRadius * sin(middleRad)).toFloat()
 
-            val textLayoutResult = labelCustomization.textMeasurer.measure(label)
+            val textLayoutResult = textLayouts[label]!!
             val textWidth = textLayoutResult.size.width
             val textHeight = textLayoutResult.size.height
 

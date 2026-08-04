@@ -24,9 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastForEach
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.common.model.Position
@@ -115,40 +118,20 @@ private val pointClick = LineChartData.PointClick(
     }
 )
 
-private val pointDrag = LineChartData.PointDrag(isPointInRange = { point, press ->
-    (press - point).getDistance() / this.density <= 15.0
-}, pointDragged = { lineTag, index, newPosition ->
-    if (newPosition.x.value < minX || newPosition.x.value > maxX) {
-        return@PointDrag
-    }
-    if (lineTag == blueTag) {
-        if (newPosition.y.value < blueLineMinY || newPosition.y.value > blueLineMaxY) {
-            return@PointDrag
-        }
-    } else {
-        if (newPosition.y.value < redLineMinY || newPosition.y.value > redLineMaxY) {
-            return@PointDrag
-        }
-    }
-    val line = lines[lineTag]
-    if (index != 0) {
-        val previousPoint = line.points[index-1]
-        if (newPosition.x.value <= previousPoint.x.value) {
-            return@PointDrag
-        }
-    }
-    if (index != line.points.size - 1) {
-        val nextPoint = line.points[index+1]
-        if (newPosition.x.value >= nextPoint.x.value) {
-            return@PointDrag
-        }
-    }
-    line.points[index] = newPosition
-})
+//Combines lineTag + index into a single Int key (lineTag in the high 16 bits, index in the low 16).
+//Avoids allocating a Pair/data class on every lookup during draw; fine as long as no line
+//has more than 65535 points and tags stay under 65535(which make sense because this library is for small data sets)
+private fun pointKey(lineTag: Int, index: Int): Int = (lineTag shl 16) or (index and 0xFFFF)
+
+private fun measurePointLabel(textMeasurer: TextMeasurer, point: ChartValue): TextLayoutResult {
+    val xValue = point.x.roundToDecimals(1)
+    val yValue = point.y.roundToDecimals(1)
+    return textMeasurer.measure("X:$xValue\nY:$yValue")
+}
 
 @Composable
 fun FunctionalityLineChartExample() {
-    val textMeasurer = rememberTextMeasurer()
+    val textMeasurer = rememberTextMeasurer(blueLine.points.size + redLine.points.size)
     val chartData by retain {
         mutableStateOf(
             LineChartData(
@@ -160,6 +143,49 @@ fun FunctionalityLineChartExample() {
         )
     }
     val zoom by retain { mutableStateOf<Zoom?>(Zoom(0.3f, 5f)) }
+    val textLayouts = retain {
+        mutableMapOf<Int, TextLayoutResult>().apply {
+            lines.fastForEach { line ->
+                line.points.forEachIndexed { index, point ->
+                    this[pointKey(line.tag, index)] = measurePointLabel(textMeasurer, point)
+                }
+            }
+        }
+    }
+    val pointDrag = retain {
+        LineChartData.PointDrag(isPointInRange = { point, press ->
+            (press - point).getDistance() / this.density <= 15.0
+        }, pointDragged = { lineTag, index, newPosition ->
+            if (newPosition.x.value < minX || newPosition.x.value > maxX) {
+                return@PointDrag
+            }
+            if (lineTag == blueTag) {
+                if (newPosition.y.value < blueLineMinY || newPosition.y.value > blueLineMaxY) {
+                    return@PointDrag
+                }
+            } else {
+                if (newPosition.y.value < redLineMinY || newPosition.y.value > redLineMaxY) {
+                    return@PointDrag
+                }
+            }
+            val line = lines[lineTag]
+            if (index != 0) {
+                val previousPoint = line.points[index-1]
+                if (newPosition.x.value <= previousPoint.x.value) {
+                    return@PointDrag
+                }
+            }
+            if (index != line.points.size - 1) {
+                val nextPoint = line.points[index+1]
+                if (newPosition.x.value >= nextPoint.x.value) {
+                    return@PointDrag
+                }
+            }
+            //Points will update the UI so we must change the point label before setting the new position
+            textLayouts[pointKey(lineTag, index)] = measurePointLabel(textMeasurer, newPosition)
+            line.points[index] = newPosition
+        })
+    }
     Column(Modifier.fillMaxWidth()) {
         Text("You can zoom and click or drag points", Modifier.align(Alignment.CenterHorizontally))
         Spacer(Modifier.height(8.dp))
@@ -189,13 +215,9 @@ fun FunctionalityLineChartExample() {
                     radius * 2f
                 )
             }
-            val point = lines[lineTag].points[index]
-            val xValue = point.x.roundToDecimals(1)
-            val yValue = point.y.roundToDecimals(1)
-            val text = "X:$xValue\nY:$yValue"
-            val layout = textMeasurer.measure(text)
+            val textLayout = textLayouts[pointKey(lineTag, index)]!!
             drawHelper.drawText(
-                layout,
+                textLayout,
                 offset,
                 Position.Top,
                 true

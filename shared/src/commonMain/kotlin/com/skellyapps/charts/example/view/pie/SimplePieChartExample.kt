@@ -26,6 +26,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -41,6 +42,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastMap
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.example.arrowValueStepper
 import com.skellyapps.charts.example.roundToDecimals
@@ -125,6 +127,11 @@ fun SimplePieChartExample() {
         PieChartAnimations.Growth(tween(2000), 1f)
     ) }
     val scope = rememberCoroutineScope()
+    val textLayouts by retain(slices) {
+        derivedStateOf {
+            slices.fastMap { textMeasurer.measure(it.value.roundToDecimals(1).toString()) }
+        }
+    }
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -258,16 +265,14 @@ fun SimplePieChartExample() {
             chartData,
             animations,
             { sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double ->
-                val layout = textMeasurer.measure(
-                    slices[sliceTag].value.roundToDecimals(1).toString()
-                )
+                val textLayout = textLayouts[sliceTag]
                 val textColor = if (slices.size == 1) {
                     Color(255,165,0)
                 } else {
                     if (sliceTag <=3) Color.White else Color.Black
                 }
                 PieChartDrawHelper.drawTextInMiddle(
-                    layout,
+                    textLayout,
                     centerX,
                     centerY,
                     outerRadius,

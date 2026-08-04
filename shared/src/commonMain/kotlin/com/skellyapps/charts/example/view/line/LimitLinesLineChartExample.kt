@@ -77,6 +77,9 @@ private val bottomAxis = LineChartData.XAxis(
 @Composable
 fun LimitLinesLineChartExample() {
     val textMeasurer = rememberTextMeasurer()
+    val highTextLayout = textMeasurer.measure("High")
+    val mediumTextLayout = textMeasurer.measure("Medium")
+    val lowTextLayout = textMeasurer.measure("Low")
     val chartData = retain {
         LineChartData(
             leftAxis = leftAxis,
@@ -146,13 +149,13 @@ fun LimitLinesLineChartExample() {
                 val highOffsetStart = with(drawHelper) { ChartValue(0.0, 60.0).toOffset(true) }
                 if (highOffsetStart.y >= 0f && highOffsetStart.y <= size.height) {
                     val highOffsetEnd = Offset(size.width, highOffsetStart.y)
-                    drawHelper.drawText(textMeasurer.measure("High"), highOffsetEnd, Position.TopLeft, true)
+                    drawHelper.drawText(highTextLayout, highOffsetEnd, Position.TopLeft, true)
                     drawLine(Color.Red, highOffsetStart, highOffsetEnd)
                 }
                 val lowOffsetStart = with(drawHelper) { ChartValue(0.0, 20.0).toOffset(true) }
                 if (lowOffsetStart.y >= 0f && lowOffsetStart.y <= size.height) {
                     val lowOffsetEnd = Offset(size.width, lowOffsetStart.y)
-                    drawHelper.drawText(textMeasurer.measure("Low"), lowOffsetEnd, Position.BottomLeft, true)
+                    drawHelper.drawText(lowTextLayout, lowOffsetEnd, Position.BottomLeft, true)
                     drawLine(Color.Blue, lowOffsetStart, lowOffsetEnd)
                 }
 
@@ -162,7 +165,7 @@ fun LimitLinesLineChartExample() {
                     mediumYStart = max(0f, mediumYStart)
                     mediumYEnd = min(size.height, mediumYEnd)
                     drawRect(Color.Yellow.copy(0.7f), Offset(0f, mediumYStart), Size(size.width, mediumYEnd - mediumYStart))
-                    drawHelper.drawText(textMeasurer.measure("Medium"), Offset(size.width, (mediumYEnd + mediumYStart) / 2f), Position.Left, true)
+                    drawHelper.drawText(mediumTextLayout, Offset(size.width, (mediumYEnd + mediumYStart) / 2f), Position.Left, true)
                 }
             }
         )

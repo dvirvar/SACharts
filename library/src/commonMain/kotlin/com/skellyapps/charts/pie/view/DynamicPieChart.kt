@@ -2,6 +2,8 @@ package com.skellyapps.charts.pie.view
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -38,18 +40,40 @@ fun DynamicPieChart(
     animations: DynamicPieChartAnimations = DynamicPieChartAnimations.None,
     drawOnEachSlice: (DrawScope.(sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double) -> Unit)? = null
 ) {
+    val totalValue by remember(data.slices) {
+        derivedStateOf {
+            data.slices.sumOf { it.value }
+        }
+    }
+    val hasLabels by remember(data.labelCustomization, data.slices) {
+        derivedStateOf {
+            data.labelCustomization != null && data.slices.any { it.label != null }
+        }
+    }
+    val textLayouts by remember(data.slices, data.labelCustomization) {
+        derivedStateOf {
+            if (data.labelCustomization != null) {
+                buildMap {
+                    data.slices.fastForEach {
+                        if (it.label != null) {
+                            this[it.label] = data.labelCustomization.textMeasurer.measure(it.label)
+                        }
+                    }
+                }
+            } else {
+                mapOf()
+            }
+        }
+    }
     val path = remember { Path() }
     Canvas(modifier) {
-        val totalValue = data.slices.sumOf { it.value }
         val centerX = center.x
         val centerY = center.y
 
         var outerRadius = minOf(centerX, centerY)
 
-        val hasLabels = data.labelCustomization != null && data.slices.any { it.label != null }
-
         if (hasLabels) {
-            val lc = data.labelCustomization
+            val lc = data.labelCustomization!!
             val edgePadding = lc.edgePadding.toPx()
             val linePadding = lc.linePadding.toPx()
             val extensionMax = lc.lineCustomization.extensionMaxLength.toPx()
@@ -70,7 +94,7 @@ fun DynamicPieChart(
                     val sinVal = sin(middleRad).toFloat()
                     val isRightSide = cosVal > 0
 
-                    val textLayoutResult = lc.textMeasurer.measure(slice.label)
+                    val textLayoutResult = textLayouts[slice.label]!!
                     val textWidth = textLayoutResult.size.width
                     val textHeight = textLayoutResult.size.height
 
@@ -126,7 +150,7 @@ fun DynamicPieChart(
             val lineStartX = (centerX + outerRadius * cos(middleRad)).toFloat()
             val lineStartY = (centerY + outerRadius * sin(middleRad)).toFloat()
 
-            val textLayoutResult = labelCustomization.textMeasurer.measure(label)
+            val textLayoutResult = textLayouts[label]!!
             val textWidth = textLayoutResult.size.width
             val textHeight = textLayoutResult.size.height
 
@@ -165,7 +189,7 @@ fun DynamicPieChart(
         }
 
         if (data.slices.size == 1) {
-            val slice = data.slices.first()
+            val slice = data.slices[0]
             val progress = if (animations.growth != null) animations.growth.value else 1f
             val animatedSweepAngle = 360f * progress
 

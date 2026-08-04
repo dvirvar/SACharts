@@ -43,6 +43,7 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastMap
 import com.skellyapps.charts.common.model.ChartValue
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.example.arrowValueStepper
@@ -108,7 +109,7 @@ private val lines = listOf(blueLine, redLine)
 @Composable
 fun LineCustomizationLineChartExample() {
     val density = LocalDensity.current
-    val textMeasurer = rememberTextMeasurer()
+    val textMeasurer = rememberTextMeasurer(blueLine.points.size + redLine.points.size)
     var chartData by retain {
         mutableStateOf(
             LineChartData(
@@ -182,6 +183,16 @@ fun LineCustomizationLineChartExample() {
         LineChartAnimations.Reveal(tween(2000), 1f)
     ) }
     val scope = rememberCoroutineScope()
+    val textLayouts = retain {
+        lines.fastMap {
+            it.points.fastMap { point ->
+                val xValue = point.x.roundToDecimals(1)
+                val yValue = point.y.roundToDecimals(1)
+                val text = "X:$xValue\nY:$yValue"
+                textMeasurer.measure(text)
+            }
+        }
+    }
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -347,15 +358,11 @@ fun LineCustomizationLineChartExample() {
                 }
             }
             if (showValues) {
-                val point = lines[lineTag].points[index]
-                val xValue = point.x.roundToDecimals(1)
-                val yValue = point.y.roundToDecimals(1)
-                val text = "X:$xValue\nY:$yValue"
-                val layout = textMeasurer.measure(text)
-                val x = offset.x.coerceIn(layout.size.width / 2f, size.width - layout.size.width / 2f) - layout.size.width / 2f
-                val topLeftOffset = Offset(x, max(offset.y - layout.size.height, 0f))
+                val textLayout = textLayouts[lineTag][index]
+                val x = offset.x.coerceIn(textLayout.size.width / 2f, size.width - textLayout.size.width / 2f) - textLayout.size.width / 2f
+                val topLeftOffset = Offset(x, max(offset.y - textLayout.size.height, 0f))
                 drawText(
-                    layout,
+                    textLayout,
                     topLeft = topLeftOffset
                 )
             }

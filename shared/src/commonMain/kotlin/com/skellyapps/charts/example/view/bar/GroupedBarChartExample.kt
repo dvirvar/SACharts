@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.fastMap
 import com.skellyapps.charts.bar.animation.BarChartAnimations
 import com.skellyapps.charts.bar.graphics.BarChartDrawHelper
 import com.skellyapps.charts.bar.model.BarChartData
@@ -102,7 +104,12 @@ private fun generateCategory(): BarChartData.Category {
 
 @Composable
 fun GroupedBarChartExample() {
-    val textMeasurer = rememberTextMeasurer()
+    val valuesCount by retain(yAxis.categories) {
+        derivedStateOf {
+            yAxis.categories.sumOf { it.values.size }
+        }
+    }
+    val textMeasurer = rememberTextMeasurer(valuesCount)
     var chartData by retain {
         mutableStateOf(
             BarChartData(
@@ -123,6 +130,16 @@ fun GroupedBarChartExample() {
         BarChartAnimations.Growth(tween(2500), 1f)
     ) }
     val scope = rememberCoroutineScope()
+    val textLayouts by retain(yAxis.categories) {
+        derivedStateOf {
+            yAxis.categories.fastMap {
+                it.values.fastMap { value ->
+                    val text = value.roundToDecimals(1).toString()
+                    textMeasurer.measure(text)
+                }
+            }
+        }
+    }
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().height(IntrinsicSize.Min).horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
@@ -162,11 +179,9 @@ fun GroupedBarChartExample() {
             animations = animations,
             barHover = barHover
         ) { categoryTag, index, barRect, isNegative ->
-            val value = yAxis.categories[categoryTag].values[index].value
-            val text = value.roundToDecimals(1).toString()
-            val layout = textMeasurer.measure(text)
+            val textLayout = textLayouts[categoryTag][index]
             BarChartDrawHelper.drawTextOutside(
-                layout,
+                textLayout,
                 barRect,
                 true,
                 isNegative,

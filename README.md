@@ -209,6 +209,10 @@ LineChart(
 ```
 Draw on chart, for example limit lines:
 ```kotlin
+val textMeasurer = rememberTextMeasurer()
+val highTextLayout = textMeasurer.measure("High")
+val mediumTextLayout = textMeasurer.measure("Medium")
+val lowTextLayout = textMeasurer.measure("Low")
 LineChart(
   modifier = Modifier.fillMaxWidth().height(300.dp),
   data = chartData,
@@ -220,7 +224,7 @@ LineChart(
     if (highOffsetStart.y >= 0f && highOffsetStart.y <= size.height) {
       val highOffsetEnd = Offset(size.width, highOffsetStart.y)
       drawHelper.drawText(
-        textLayoutResult = textMeasurer.measure("High"), 
+        textLayoutResult = highTextLayout, 
         offset = highOffsetEnd, 
         position = Position.TopLeft, 
         stayInCanvasBounds = true
@@ -232,7 +236,7 @@ LineChart(
     if (lowOffsetStart.y >= 0f && lowOffsetStart.y <= size.height) {
       val lowOffsetEnd = Offset(size.width, lowOffsetStart.y)
       drawHelper.drawText(
-        textLayoutResult = textMeasurer.measure("Low"), 
+        textLayoutResult = lowTextLayout, 
         offset = lowOffsetEnd, 
         position = Position.BottomLeft,
         stayInCanvasBounds = true
@@ -247,7 +251,7 @@ LineChart(
       mediumYEnd = min(size.height, mediumYEnd)
       drawRect(Color.Yellow.copy(0.7f), Offset(0f, mediumYStart), Size(size.width, mediumYEnd - mediumYStart))
       drawHelper.drawText(
-        textLayoutResult = textMeasurer.measure("Medium"),
+        textLayoutResult = mediumTextLayout,
         offset = Offset(size.width, (mediumYEnd + mediumYStart) / 2f), 
         position = Position.Left,
         stayInCanvasBounds = true
@@ -257,7 +261,10 @@ LineChart(
 )
 ```
 Add shapes or labels to points:
+
+(Measuring text every draw is bad practice, you should cache your labels outside the draw function)
 ```kotlin
+val textMeasurer = rememberTextMeasurer()
 LineChart(
   modifier = Modifier.fillMaxWidth().height(300.dp),
   data = chartData,
@@ -293,9 +300,10 @@ LineChart(
     val xValue = point.x.roundToDecimals(1)
     val yValue = point.y.roundToDecimals(1)
     val text = "X:$xValue\nY:$yValue"
-    val layout = textMeasurer.measure(text)
+    //Bad practice, cache the text layout outside the draw function
+    val textLayout = textMeasurer.measure(text)
     drawHelper.drawText(
-      textLayoutResult = layout,
+      textLayoutResult = textLayout,
       offset = offset,
       position = Position.Top,
       stayInCanvasBounds = true
@@ -419,17 +427,21 @@ BarChart(
 )
 ```
 Add labels to bars:
+
+(Measuring text every draw is bad practice, you should cache your labels outside the draw function)
 ```kotlin
+val textMeasurer = rememberTextMeasurer()
 BarChart(
     modifier = Modifier.fillMaxWidth().height(300.dp),
     data = chartData,
     drawOnEachValue = { categoryTag, index, barRect, isNegative ->
       val value = yAxis.categories[categoryTag].values[index].value
       val text = value.roundToDecimals(1).toString()
-      val layout = textMeasurer.measure(text)
+      //Bad practice, cache the text layout outside the draw function
+      val textLayout = textMeasurer.measure(text)
       //Draw label outside the bar
       BarChartDrawHelper.drawTextOutside(
-        textLayoutResult = layout,
+        textLayoutResult = textLayout,
         barRect = barRect,
         stayInCanvasBounds = true,
         isNegative = isNegative,
@@ -562,18 +574,21 @@ DynamicPieChart(
 DynamicPieChartData has same parameters as PieChartData, the only difference is that dynamic has outerRadiusMinPercentage instead of outerRadiusPercentage.
 
 Add value labels to slices:
+
+(Measuring text every draw is bad practice, you should cache your labels outside the draw function)
 ```kotlin
 val textMeasurer = rememberTextMeasurer()
 PieChart(
     modifier = Modifier.size(300.dp),
     data = chartData,
     drawOnEachSlice = { sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double ->
-      val layout = textMeasurer.measure(
+      //Bad practice, cache the text layout outside the draw function
+      val textLayout = textMeasurer.measure(
         slices[sliceTag].value.roundToDecimals(1).toString()
       )
       //Draw label in the middle of the slice
       PieChartDrawHelper.drawTextInMiddle(
-        textLayoutResult = layout,
+        textLayoutResult = textLayout,
         centerX = centerX,
         centerY = centerY,
         outerRadius = outerRadius,
