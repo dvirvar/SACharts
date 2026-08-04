@@ -46,7 +46,7 @@ kotlin {
 mavenPublishing {
     publishToMavenCentral()
     signAllPublications()
-    coordinates("io.github.dvirvar", "sacharts", "0.9")
+    coordinates("io.github.dvirvar", "sacharts", "1.0")
 
     pom {
         name = "SACharts"
@@ -66,13 +66,14 @@ mavenPublishing {
             developer {
                 id = "dvirvar"
                 name = "Dvir var"
+                url = "https://github.com/dvirvar"
             }
         }
 
         scm {
-            url = ""
-            connection = ""
-            developerConnection = ""
+            url = "https://github.com/dvirvar/SACharts"
+            connection = "scm:git:git://github.com/dvirvar/SACharts.git"
+            developerConnection = "scm:git:ssh://git@github.com/dvirvar/SACharts.git"
         }
     }
 }

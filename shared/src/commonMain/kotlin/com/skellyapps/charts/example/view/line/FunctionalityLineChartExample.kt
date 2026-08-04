@@ -161,7 +161,7 @@ fun FunctionalityLineChartExample() {
     }
     val zoom by retain { mutableStateOf<Zoom?>(Zoom(0.3f, 5f)) }
     Column(Modifier.fillMaxWidth()) {
-        Text("You can zoom and drag points", Modifier.align(Alignment.CenterHorizontally))
+        Text("You can zoom and click or drag points", Modifier.align(Alignment.CenterHorizontally))
         Spacer(Modifier.height(8.dp))
         LineChart(
             Modifier.fillMaxWidth().height(300.dp).padding(start = 8.dp),
@@ -170,10 +170,10 @@ fun FunctionalityLineChartExample() {
             zoom = zoom,
             pointClick = pointClick,
             pointDrag = pointDrag
-        ) { canvasSize, lineTag, index, offset, _ ->
+        ) { drawHelper, lineTag, index, offset, _ ->
             val radius = 5.dp.toPx()
-            if (offset.x < -radius || offset.x > canvasSize.width + radius ||
-                offset.y < -radius || offset.y > canvasSize.height + radius) {
+            if (offset.x < -radius || offset.x > size.width + radius ||
+                offset.y < -radius || offset.y > size.height + radius) {
                 return@LineChart
             }
             if (lineTag == blueTag) {
@@ -183,7 +183,7 @@ fun FunctionalityLineChartExample() {
                     offset
                 )
             } else {
-                drawSquare(
+                drawHelper.drawSquare(
                     colors[lineTag],
                     offset,
                     radius * 2f
@@ -194,9 +194,8 @@ fun FunctionalityLineChartExample() {
             val yValue = point.y.roundToDecimals(1)
             val text = "X:$xValue\nY:$yValue"
             val layout = textMeasurer.measure(text)
-            drawText(
+            drawHelper.drawText(
                 layout,
-                canvasSize,
                 offset,
                 Position.Top,
                 true

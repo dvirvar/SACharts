@@ -3,7 +3,6 @@ package com.skellyapps.charts.bar.model
 import androidx.annotation.FloatRange
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -19,6 +18,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.common.model.ChartPixel
 import com.skellyapps.charts.common.model.ChartValueCoordinate
+import com.skellyapps.charts.common.model.DpCornerRadius
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.common.model.Position
 
@@ -65,20 +65,20 @@ data class BarChartData(
             @param:FloatRange(0.0, 1.0) val alpha: Float = 1f,
             val colorFilter: ColorFilter? = null,
             val blendMode: BlendMode = DefaultBlendMode,
-            val topLeftCornerRadius: CornerRadius = CornerRadius.Zero,
-            val topRightCornerRadius: CornerRadius = CornerRadius.Zero,
-            val bottomRightCornerRadius: CornerRadius = CornerRadius.Zero,
-            val bottomLeftCornerRadius: CornerRadius = CornerRadius.Zero,
+            val topLeftCornerRadius: DpCornerRadius = DpCornerRadius.Zero,
+            val topRightCornerRadius: DpCornerRadius = DpCornerRadius.Zero,
+            val bottomRightCornerRadius: DpCornerRadius = DpCornerRadius.Zero,
+            val bottomLeftCornerRadius: DpCornerRadius = DpCornerRadius.Zero,
         ) {
             constructor(
                 color: Color,
                 @FloatRange(0.0, 1.0) alpha: Float = 1f,
                 colorFilter: ColorFilter? = null,
                 blendMode: BlendMode = DefaultBlendMode,
-                topLeftCornerRadius: CornerRadius = CornerRadius.Zero,
-                topRightCornerRadius: CornerRadius = CornerRadius.Zero,
-                bottomRightCornerRadius: CornerRadius = CornerRadius.Zero,
-                bottomLeftCornerRadius: CornerRadius = CornerRadius.Zero,
+                topLeftCornerRadius: DpCornerRadius = DpCornerRadius.Zero,
+                topRightCornerRadius: DpCornerRadius = DpCornerRadius.Zero,
+                bottomRightCornerRadius: DpCornerRadius = DpCornerRadius.Zero,
+                bottomLeftCornerRadius: DpCornerRadius = DpCornerRadius.Zero,
             ): this(SolidColor(color), alpha, colorFilter, blendMode, topLeftCornerRadius, topRightCornerRadius, bottomRightCornerRadius, bottomLeftCornerRadius)
         }
     }

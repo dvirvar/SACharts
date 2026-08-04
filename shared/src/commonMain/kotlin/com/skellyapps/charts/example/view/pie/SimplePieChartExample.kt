@@ -45,6 +45,7 @@ import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.example.arrowValueStepper
 import com.skellyapps.charts.example.roundToDecimals
 import com.skellyapps.charts.pie.animation.PieChartAnimations
+import com.skellyapps.charts.pie.graphics.PieChartDrawHelper
 import com.skellyapps.charts.pie.model.PieChartData
 import com.skellyapps.charts.pie.view.PieChart
 import kotlinx.coroutines.launch
@@ -265,7 +266,7 @@ fun SimplePieChartExample() {
                 } else {
                     if (sliceTag <=3) Color.White else Color.Black
                 }
-                drawTextInMiddle(
+                PieChartDrawHelper.drawTextInMiddle(
                     layout,
                     centerX,
                     centerY,

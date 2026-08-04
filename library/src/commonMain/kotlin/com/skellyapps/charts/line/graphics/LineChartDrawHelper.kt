@@ -1,6 +1,5 @@
 package com.skellyapps.charts.line.graphics
 
-import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
@@ -14,11 +13,17 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.style.TextDecoration
+import com.skellyapps.charts.common.model.ChartValue
+import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.common.model.Position
 
-@LayoutScopeMarker
-interface LineChartDrawScope : DrawScope {
-    fun drawSquare(
+class LineChartDrawHelper internal constructor(
+    private val xAxisViewport: ChartValue,
+    private val leftAxisYViewport: ChartValue,
+    private val rightAxisYViewport: ChartValue,
+)  {
+    context(d: DrawScope)
+    inline fun drawSquare(
         brush: Brush,
         offset: Offset,
         size: Float,
@@ -27,7 +32,7 @@ interface LineChartDrawScope : DrawScope {
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DrawScope.DefaultBlendMode
     ) {
-        drawRect(
+        d.drawRect(
             brush,
             offset - Offset(size / 2f, size / 2f),
             Size(size, size),
@@ -38,7 +43,8 @@ interface LineChartDrawScope : DrawScope {
         )
     }
 
-    fun drawSquare(
+    context(d: DrawScope)
+    inline fun drawSquare(
         color: Color,
         offset: Offset,
         size: Float,
@@ -47,7 +53,7 @@ interface LineChartDrawScope : DrawScope {
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DrawScope.DefaultBlendMode
     ) {
-        drawRect(
+        d.drawRect(
             color,
             offset - Offset(size / 2f, size / 2f),
             Size(size, size),
@@ -58,9 +64,9 @@ interface LineChartDrawScope : DrawScope {
         )
     }
 
+    context(d: DrawScope)
     fun drawText(
         textLayoutResult: TextLayoutResult,
-        canvasSize: Size,
         offset: Offset,
         position: Position,
         stayInCanvasBounds: Boolean,
@@ -84,10 +90,10 @@ interface LineChartDrawScope : DrawScope {
             else -> offset.x - textWidth / 2f
         }
         if (stayInCanvasBounds) {
-            x = x.coerceIn(0f, canvasSize.width - textWidth)
-            y = y.coerceIn(0f, canvasSize.height - textHeight)
+            x = x.coerceIn(0f, d.size.width - textWidth)
+            y = y.coerceIn(0f, d.size.height - textHeight)
         }
-        drawText(
+        d.drawText(
             textLayoutResult,
             color,
             Offset(x, y),
@@ -98,8 +104,30 @@ interface LineChartDrawScope : DrawScope {
             blendMode
         )
     }
-}
 
-internal class LineChartDrawScopeImpl(
-    private val drawScope: DrawScope
-) : LineChartDrawScope, DrawScope by drawScope
+    context(d: DrawScope)
+    fun ChartValue.toOffset(isLeftAxis: Boolean): Offset {
+        val yAxis = if(isLeftAxis) leftAxisYViewport else rightAxisYViewport
+        return toChartPixel(d.size, xAxisViewport.x, xAxisViewport.y, yAxis.x, yAxis.y).offset
+    }
+
+    context(d: DrawScope)
+    fun ChartValueCoordinate.toXPixel(): Float {
+        return toChartPixelCoordinate(d.size.width, xAxisViewport.x, xAxisViewport.y, false).value
+    }
+
+    context(d: DrawScope)
+    fun ChartValueCoordinate.toYPixel(isLeftAxis: Boolean): Float {
+        val minCoordinate = if (isLeftAxis) {
+            leftAxisYViewport.x
+        } else {
+            rightAxisYViewport.x
+        }
+        val maxCoordinate = if (isLeftAxis) {
+            leftAxisYViewport.y
+        } else {
+            rightAxisYViewport.y
+        }
+        return toChartPixelCoordinate(d.size.height, minCoordinate, maxCoordinate, true).value
+    }
+}

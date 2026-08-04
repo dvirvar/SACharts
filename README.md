@@ -3,6 +3,17 @@
 
 Supports Android, iOS, Desktop, and Web.
 
+<div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
+  <img src="/assets/line_1.png" width="300" alt="Line Chart 1">
+  <img src="/assets/line_2.png" width="300" alt="Line Chart 2">
+  <img src="/assets/bar_1.png" width="300" alt="Bar Chart 1">
+  <img src="/assets/bar_2.png" width="300" alt="Bar Chart 2">
+  <img src="/assets/horiz_bar_1.png" width="300" alt="Horizontal Bar 1">
+  <img src="/assets/horiz_bar_2.png" width="300" alt="Horizontal Bar 2">
+  <img src="/assets/pie_1.png" width="300" alt="Pie Chart 1">
+  <img src="/assets/pie_2.png" width="300" alt="Pie Chart 2">
+</div>
+
 ## 🚀 Key Features
 * **Line Charts:** Dual Y-axes support, real-time point dragging (direct or via long-press), panning/zooming. Customizable axes labels, points(you can draw whatever you want on a point) and click overlays.
 * **Bar & Horizontal Bar Charts:** Grouped and stacked category data models, axis alignment. Customizable axes labels, bar values(you can draw whatever you want on a bar), bars with corner radius and brush fills.
@@ -18,7 +29,7 @@ Add the dependency to your shared module's `commonMain` source set:
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("com.skellyapps.charts:sacharts:0.9")
+            implementation("com.skellyapps.charts:sacharts:1.0")
         }
     }
 }
@@ -196,21 +207,70 @@ LineChart(
   pointDragAfterLongPress = pointDrag // <-- Add this parameter for drag after long press
 )
 ```
+Draw on chart, for example limit lines:
+```kotlin
+LineChart(
+  modifier = Modifier.fillMaxWidth().height(300.dp),
+  data = chartData,
+  zoom = Zoom(scrollJump = 0.3f, max = 5f),
+  drawOnChart = { drawHelper -> // <-- Add this parameter
+    //Draw limit lines
+    //High y value of 60  
+    val highOffsetStart = with(drawHelper) { ChartValue(0.0, 60.0).toOffset(isLeftAxis = true) }
+    if (highOffsetStart.y >= 0f && highOffsetStart.y <= size.height) {
+      val highOffsetEnd = Offset(size.width, highOffsetStart.y)
+      drawHelper.drawText(
+        textLayoutResult = textMeasurer.measure("High"), 
+        offset = highOffsetEnd, 
+        position = Position.TopLeft, 
+        stayInCanvasBounds = true
+      )
+      drawLine(Color.Red, highOffsetStart, highOffsetEnd)
+    }
+    //Low y value of 20
+    val lowOffsetStart = with(drawHelper) { ChartValue(0.0, 20.0).toOffset(isLeftAxis = true) }
+    if (lowOffsetStart.y >= 0f && lowOffsetStart.y <= size.height) {
+      val lowOffsetEnd = Offset(size.width, lowOffsetStart.y)
+      drawHelper.drawText(
+        textLayoutResult = textMeasurer.measure("Low"), 
+        offset = lowOffsetEnd, 
+        position = Position.BottomLeft,
+        stayInCanvasBounds = true
+      )
+      drawLine(Color.Blue, lowOffsetStart, lowOffsetEnd)
+    }
+    //Draw a ranged limit(from y value of 30 to 50)
+    var mediumYStart = with(drawHelper) { ChartValueCoordinate(50.0).toYPixel(isLeftAxis = true) }
+    var mediumYEnd = with(drawHelper) { ChartValueCoordinate(30.0).toYPixel(isLeftAxis = true) }
+    if (mediumYStart <= size.height && mediumYEnd >= 0f) {
+      mediumYStart = max(0f, mediumYStart)
+      mediumYEnd = min(size.height, mediumYEnd)
+      drawRect(Color.Yellow.copy(0.7f), Offset(0f, mediumYStart), Size(size.width, mediumYEnd - mediumYStart))
+      drawHelper.drawText(
+        textLayoutResult = textMeasurer.measure("Medium"),
+        offset = Offset(size.width, (mediumYEnd + mediumYStart) / 2f), 
+        position = Position.Left,
+        stayInCanvasBounds = true
+      )
+    }
+  }
+)
+```
 Add shapes or labels to points:
 ```kotlin
 LineChart(
   modifier = Modifier.fillMaxWidth().height(300.dp),
   data = chartData,
   zoom = Zoom(scrollJump = 0.3f, max = 5f),
-  drawOnEachPoint = { canvasSize, lineTag, index, offset, animatedYPixel -> // <-- Add this parameter
+  drawOnEachPoint = { drawHelper, lineTag, index, offset, animatedYPixel -> // <-- Add this parameter
     val radius = 5.dp.toPx()
     //Don't draw if the point is out of bounds by radius distance
     //Needed only if zoom is set
     //The chart do clip to bounds if chart is zoomed in
     //But as you will see below, we coerce the labels to always be inside charts' bounds
     //So we need this check to not show them when they are out of bounds
-    if (offset.x < -radius || offset.x > canvasSize.width + radius ||
-      offset.y < -radius || offset.y > canvasSize.height + radius) {
+    if (offset.x < -radius || offset.x > size.width + radius ||
+      offset.y < -radius || offset.y > size.height + radius) {
       return@LineChart
     }
     //If index is even draw a circle, otherwise draw a square
@@ -221,7 +281,7 @@ LineChart(
         offset
       )
     } else {
-      drawSquare(
+      drawHelper.drawSquare(
         Color.Blue,
         offset,
         radius * 2f
@@ -234,9 +294,8 @@ LineChart(
     val yValue = point.y.roundToDecimals(1)
     val text = "X:$xValue\nY:$yValue"
     val layout = textMeasurer.measure(text)
-    drawText(
+    drawHelper.drawText(
       textLayoutResult = layout,
-      canvasSize = canvasSize,
       offset = offset,
       position = Position.Top,
       stayInCanvasBounds = true
@@ -364,22 +423,20 @@ Add labels to bars:
 BarChart(
     modifier = Modifier.fillMaxWidth().height(300.dp),
     data = chartData,
-    drawOnEachValue = { canvasSize, categoryTag, index, barRect ->
+    drawOnEachValue = { categoryTag, index, barRect, isNegative ->
       val value = yAxis.categories[categoryTag].values[index].value
-      val isNegative = value < 0.0
       val text = value.roundToDecimals(1).toString()
       val layout = textMeasurer.measure(text)
       //Draw label outside the bar
-      drawTextOutside(
+      BarChartDrawHelper.drawTextOutside(
         textLayoutResult = layout,
-        canvasSize = canvasSize,
         barRect = barRect,
         stayInCanvasBounds = true,
         isNegative = isNegative,
         color = Color.Black
       )
       //Or you can draw it inside the bar
-      drawTextInside(
+      BarChartDrawHelper.drawTextInside(
         textLayoutResult = layout,
         barRect = barRect,
         position = Position.Bottom,
@@ -394,7 +451,7 @@ A simple pie chart.
 
 ```kotlin
 private val colors = listOf(Color.Blue, Color.Red, Color.Black, Color.Magenta, Color.Yellow, Color.Green, Color.Cyan)
-private val slices = (0..6).map { PieChartData.Slice(Random.nextDouble(10.0, 30.0), colors[it], it) }.toMutableList()
+private val slices = (0..6).map { PieChartData.Slice(value = Random.nextDouble(10.0, 30.0), color = colors[it], tag = it) }.toMutableList()
 
 @Composable
 fun SimpleBarChartExample() {
@@ -409,28 +466,28 @@ fun SimpleBarChartExample() {
     )
 }
 ```
-To change start angle:
+Change start angle:
 ```kotlin
 PieChartData(
   slices = slices,
   startAngle = 90f// <-- Add this parameter
 )
 ```
-To make a hole:
+Make a hole:
 ```kotlin
 PieChartData(
   slices = slices,
   innerRadiusPercentage = 0.5f// <-- Add this parameter
 )
 ```
-To make space between slices:
+Make space between slices:
 ```kotlin
 PieChartData(
   slices = slices,
   sliceSpacingDegrees = 5f// <-- Add this parameter
 )
 ```
-To inner border to slices:
+Add inner border to slices:
 ```kotlin
 PieChartData(
   slices = slices,
@@ -462,12 +519,12 @@ BarChart(
   animations = animations // <-- Add this parameter
 )
 ```
-To add labels to slices:
+Add labels to slices:
 ```kotlin
 private val labels = listOf("Blue", "Red", "Black", "Magenta", "Yellow", "Green", "Cyan")
 private val colors = listOf(Color.Blue, Color.Red, Color.Black, Color.Magenta, Color.Yellow, Color.Green, Color.Cyan)
 private val slices = (0..6).map { 
-    PieChartData.Slice(Random.nextDouble(10.0, 30.0), colors[it], labels[it])//Add label to slice
+    PieChartData.Slice(value = Random.nextDouble(10.0, 30.0), color = colors[it], tag = it, label = labels[it])//Add label to slice
 }.toMutableList()
 ...
 val textMeasurer = rememberTextMeasurer()
@@ -510,12 +567,12 @@ val textMeasurer = rememberTextMeasurer()
 PieChart(
     modifier = Modifier.size(300.dp),
     data = chartData,
-    drawOnEachSlice = { sliceTag, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double ->
+    drawOnEachSlice = { sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double ->
       val layout = textMeasurer.measure(
         slices[sliceTag].value.roundToDecimals(1).toString()
       )
       //Draw label in the middle of the slice
-      drawTextInMiddle(
+      PieChartDrawHelper.drawTextInMiddle(
         textLayoutResult = layout,
         centerX = centerX,
         centerY = centerY,

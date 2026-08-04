@@ -18,7 +18,7 @@ import androidx.compose.ui.util.fastForEach
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 
-private val exampleScreens = listOf(Screen.LineChartExamples, Screen.BarChartExamples, Screen.PieChartExamples)
+private val exampleScreens: List<Screen> = listOf(Screen.LineChartExamples, Screen.BarChartExamples, Screen.PieChartExamples)
 
 @Composable
 internal fun MainScreen(backStack: NavBackStack<NavKey>) {

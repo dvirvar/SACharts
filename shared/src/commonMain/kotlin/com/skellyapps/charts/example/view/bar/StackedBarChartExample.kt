@@ -35,6 +35,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.bar.animation.BarChartAnimations
+import com.skellyapps.charts.bar.graphics.BarChartDrawHelper
 import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.view.BarChart
 import com.skellyapps.charts.common.model.ChartValueCoordinate
@@ -157,10 +158,10 @@ fun StackedBarChartExample() {
             chartData,
             animations = animations,
             barHover = barHover
-        ) { canvasSize, categoryTag, index, barRect, isNegative ->
+        ) { categoryTag, index, barRect, isNegative ->
             val text = yAxis.categories[categoryTag].values[index].value.roundToDecimals(1).toString()
             val layout = textMeasurer.measure(text)
-            drawTextInside(
+            BarChartDrawHelper.drawTextInside(
                 layout,
                 barRect,
                 Position.Bottom,

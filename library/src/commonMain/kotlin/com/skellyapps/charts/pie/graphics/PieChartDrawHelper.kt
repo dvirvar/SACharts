@@ -1,6 +1,5 @@
 package com.skellyapps.charts.pie.graphics
 
-import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -13,8 +12,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import kotlin.math.cos
 import kotlin.math.sin
 
-@LayoutScopeMarker
-interface PieChartDrawScope : DrawScope {
+object PieChartDrawHelper {
+    context(d: DrawScope)
     fun drawTextInMiddle(
         textLayoutResult: TextLayoutResult,
         centerX: Float,
@@ -44,7 +43,7 @@ interface PieChartDrawScope : DrawScope {
         }
         val x = middlePointX - textWidth / 2f
         val y = middlePointY - textHeight / 2f
-        drawText(
+        d.drawText(
             textLayoutResult,
             color,
             Offset(x, y),
@@ -56,7 +55,3 @@ interface PieChartDrawScope : DrawScope {
         )
     }
 }
-
-internal class PieChartDrawScopeImpl(
-    private val drawScope: DrawScope
-) : PieChartDrawScope, DrawScope by drawScope

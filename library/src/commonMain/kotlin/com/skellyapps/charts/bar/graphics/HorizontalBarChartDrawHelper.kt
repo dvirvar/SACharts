@@ -1,9 +1,7 @@
 package com.skellyapps.charts.bar.graphics
 
-import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -14,11 +12,10 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.style.TextDecoration
 import com.skellyapps.charts.common.model.Position
 
-@LayoutScopeMarker
-interface HorizontalBarChartDrawScope : DrawScope {
+object HorizontalBarChartDrawHelper {
+    context(d: DrawScope)
     fun drawTextOutside(
         textLayoutResult: TextLayoutResult,
-        canvasSize: Size,
         barRect: Rect,
         stayInCanvasBounds: Boolean,
         isNegative: Boolean,
@@ -39,10 +36,10 @@ interface HorizontalBarChartDrawScope : DrawScope {
         }
         var y = barRect.top + barRect.height / 2f - textHeight / 2f
         if (stayInCanvasBounds) {
-            x = x.coerceIn(0f, canvasSize.width - textWidth)
-            y = y.coerceIn(0f, canvasSize.height - textHeight)
+            x = x.coerceIn(0f, d.size.width - textWidth)
+            y = y.coerceIn(0f, d.size.height - textHeight)
         }
-        drawText(
+        d.drawText(
             textLayoutResult,
             color,
             Offset(x, y),
@@ -54,6 +51,7 @@ interface HorizontalBarChartDrawScope : DrawScope {
         )
     }
 
+    context(d: DrawScope)
     fun drawTextInside(
         textLayoutResult: TextLayoutResult,
         barRect: Rect,
@@ -78,7 +76,7 @@ interface HorizontalBarChartDrawScope : DrawScope {
             Position.Right in position -> if (isNegative) barRect.left else barRect.right - textWidth
             else -> barRect.left + barRect.width / 2f - textWidth / 2f
         }
-        drawText(
+        d.drawText(
             textLayoutResult,
             color,
             Offset(x, y),
@@ -90,7 +88,3 @@ interface HorizontalBarChartDrawScope : DrawScope {
         )
     }
 }
-
-internal class HorizontalBarChartDrawScopeImpl(
-    private val drawScope: DrawScope
-) : HorizontalBarChartDrawScope, DrawScope by drawScope

@@ -1,9 +1,7 @@
 package com.skellyapps.charts.bar.graphics
 
-import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -14,11 +12,10 @@ import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.style.TextDecoration
 import com.skellyapps.charts.common.model.Position
 
-@LayoutScopeMarker
-interface BarChartDrawScope : DrawScope {
+object BarChartDrawHelper {
+    context(d: DrawScope)
     fun drawTextOutside(
         textLayoutResult: TextLayoutResult,
-        canvasSize: Size,
         barRect: Rect,
         stayInCanvasBounds: Boolean,
         isNegative: Boolean,
@@ -38,10 +35,10 @@ interface BarChartDrawScope : DrawScope {
             barRect.top - textHeight
         }
         if (stayInCanvasBounds) {
-            x = x.coerceIn(0f, canvasSize.width - textWidth)
-            y = y.coerceIn(0f, canvasSize.height - textHeight)
+            x = x.coerceIn(0f, d.size.width - textWidth)
+            y = y.coerceIn(0f, d.size.height - textHeight)
         }
-        drawText(
+        d.drawText(
             textLayoutResult,
             color,
             Offset(x, y),
@@ -53,6 +50,7 @@ interface BarChartDrawScope : DrawScope {
         )
     }
 
+    context(d: DrawScope)
     fun drawTextInside(
         textLayoutResult: TextLayoutResult,
         barRect: Rect,
@@ -77,7 +75,7 @@ interface BarChartDrawScope : DrawScope {
             Position.Right in position -> barRect.right - textWidth
             else -> barRect.left + barRect.width / 2f - textWidth / 2f
         }
-        drawText(
+        d.drawText(
             textLayoutResult,
             color,
             Offset(x, y),
@@ -89,7 +87,3 @@ interface BarChartDrawScope : DrawScope {
         )
     }
 }
-
-internal class BarChartDrawScopeImpl(
-    private val drawScope: DrawScope
-) : BarChartDrawScope, DrawScope by drawScope

@@ -31,16 +31,17 @@ import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.bar.animation.HorizontalBarChartAnimations
+import com.skellyapps.charts.bar.graphics.HorizontalBarChartDrawHelper
 import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.model.HorizontalBarChartData
 import com.skellyapps.charts.bar.view.HorizontalBarChart
 import com.skellyapps.charts.common.model.ChartValueCoordinate
+import com.skellyapps.charts.common.model.DpCornerRadius
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.common.model.Position
 import com.skellyapps.charts.example.roundToDecimals
@@ -50,7 +51,7 @@ import kotlin.random.Random
 private val blueCategory = BarChartData.Category(
     (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
     0,
-    BarChartData.Category.Customization(Color.Blue, topRightCornerRadius = CornerRadius(5f), bottomRightCornerRadius = CornerRadius(5f)),
+    BarChartData.Category.Customization(Color.Blue, topRightCornerRadius = DpCornerRadius(5.dp), bottomRightCornerRadius = DpCornerRadius(5.dp)),
 )
 
 private val bottomAxis = HorizontalBarChartData.XAxis(
@@ -96,7 +97,7 @@ private fun generateCategory(): BarChartData.Category {
     return BarChartData.Category(
         (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
         currentColor,
-        BarChartData.Category.Customization(colors[currentColor], topRightCornerRadius = CornerRadius(5f), bottomRightCornerRadius = CornerRadius(5f)),
+        BarChartData.Category.Customization(colors[currentColor], topRightCornerRadius = DpCornerRadius(5.dp), bottomRightCornerRadius = DpCornerRadius(5.dp)),
     )
 }
 
@@ -161,13 +162,12 @@ fun GroupedHorizontalBarChartExample() {
             chartData,
             animations = animations,
             barHover = barHover
-        ) { canvasSize, categoryTag, index, barRect, isNegative ->
+        ) { categoryTag, index, barRect, isNegative ->
             val value = bottomAxis.categories[categoryTag].values[index].value
             val text = value.roundToDecimals(1).toString()
             val layout = textMeasurer.measure(text)
-            drawTextOutside(
+            HorizontalBarChartDrawHelper.drawTextOutside(
                 layout,
-                canvasSize,
                 barRect,
                 true,
                 isNegative,

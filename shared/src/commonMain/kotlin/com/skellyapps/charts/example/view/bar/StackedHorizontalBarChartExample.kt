@@ -35,6 +35,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.bar.animation.HorizontalBarChartAnimations
+import com.skellyapps.charts.bar.graphics.HorizontalBarChartDrawHelper
 import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.model.HorizontalBarChartData
 import com.skellyapps.charts.bar.view.HorizontalBarChart
@@ -159,10 +160,10 @@ fun StackedHorizontalBarChartExample() {
             chartData,
             animations = animations,
             barHover = barHover
-        ) { canvasSize, categoryTag, index, barRect, isNegative ->
+        ) { categoryTag, index, barRect, isNegative ->
             val text = bottomAxis.categories[categoryTag].values[index].value.roundToDecimals(1).toString()
             val layout = textMeasurer.measure(text)
-            drawTextInside(
+            HorizontalBarChartDrawHelper.drawTextInside(
                 layout,
                 barRect,
                 Position.Right,

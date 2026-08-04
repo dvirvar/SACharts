@@ -27,6 +27,7 @@ import com.skellyapps.charts.example.view.line.AxesCustomizationLineChartExample
 import com.skellyapps.charts.example.view.line.DividerCustomizationLineChartExample
 import com.skellyapps.charts.example.view.line.FunctionalityLineChartExample
 import com.skellyapps.charts.example.view.line.GridLineCustomizationLineChartExample
+import com.skellyapps.charts.example.view.line.LimitLinesLineChartExample
 import com.skellyapps.charts.example.view.line.LineCustomizationLineChartExample
 import com.skellyapps.charts.example.view.line.SimpleLineChartExample
 import com.skellyapps.charts.example.view.line.SimpleTwoAxesLineChartExample
@@ -45,6 +46,11 @@ internal fun LineChartExamplesScreen(backStack: NavBackStack<NavKey>) {
             item {
                 ColumnItem("Simple 2 vertical axes") {
                     SimpleTwoAxesLineChartExample()
+                }
+            }
+            item {
+                ColumnItem("Limit lines") {
+                    LimitLinesLineChartExample()
                 }
             }
             item {

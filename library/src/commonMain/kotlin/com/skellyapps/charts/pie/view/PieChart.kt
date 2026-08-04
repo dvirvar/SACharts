@@ -2,19 +2,19 @@ package com.skellyapps.charts.pie.view
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastForEach
 import com.skellyapps.charts.pie.animation.PieChartAnimations
 import com.skellyapps.charts.pie.extension.drawBorderInside
-import com.skellyapps.charts.pie.graphics.PieChartDrawScope
-import com.skellyapps.charts.pie.graphics.PieChartDrawScopeImpl
 import com.skellyapps.charts.pie.model.PieChartData
 import kotlin.math.PI
 import kotlin.math.cos
@@ -31,8 +31,9 @@ fun PieChart(
     modifier: Modifier,
     data: PieChartData,
     animations: PieChartAnimations = PieChartAnimations.None,
-    drawOnEachSlice: (PieChartDrawScope.(sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double) -> Unit)? = null
+    drawOnEachSlice: (DrawScope.(sliceTag: Int, centerX: Float, centerY: Float, outerRadius: Float, innerRadius: Float, middleRad: Double) -> Unit)? = null
 ) {
+    val path = remember { Path() }
     Canvas(modifier) {
         val totalValue = data.slices.sumOf { it.value }
         val centerX = center.x
@@ -80,7 +81,7 @@ fun PieChart(
             val adjustedLineEndX = if (isRightSide) adjustedFinalLineEndX - shoulderLineLength else adjustedFinalLineEndX + shoulderLineLength
 
             //Combine extension and shoulder lines into a path
-            val labelLinePath = Path().apply {
+            val labelLinePath = path.apply {
                 moveTo(lineStartX, lineStartY)
                 lineTo(adjustedLineEndX, adjustedLineEndY)
                 lineTo(adjustedFinalLineEndX, adjustedLineEndY)
@@ -97,6 +98,7 @@ fun PieChart(
                     pathEffect = labelCustomization.lineCustomization.pathEffect
                 )
             )
+            labelLinePath.reset()
 
             drawText(
                 textLayoutResult = textLayoutResult,
@@ -113,10 +115,9 @@ fun PieChart(
             val outerRect = Rect(Offset(centerX - outerRadius, centerY - outerRadius), Size(outerRadius * 2, outerRadius * 2))
             val innerRect = Rect(Offset(centerX - innerRadius, centerY - innerRadius), Size(innerRadius * 2, innerRadius * 2))
 
-            val startAngle = data.startAngle
-
-            val donutRingPath = Path().apply {
+            val donutRingPath = path.apply {
                 if (animatedSweepAngle < 360f) {
+                    val startAngle = data.startAngle
                     arcTo(
                         rect = outerRect,
                         startAngleDegrees = startAngle,
@@ -140,11 +141,10 @@ fun PieChart(
             data.sliceBorder?.let {
                 drawBorderInside(donutRingPath, it)
             }
+            donutRingPath.reset()
             val middleRad = data.startAngle * (PI / 180.0)
             drawOnEachSlice?.let {
-                with(PieChartDrawScopeImpl(this)) {
-                    it(this, slice.tag, centerX, centerY, outerRadius, innerRadius, middleRad)
-                }
+                it(this, slice.tag, centerX, centerY, outerRadius, innerRadius, middleRad)
             }
             if (slice.label != null && data.labelCustomization != null) {
                 drawLabel(slice.label, data.labelCustomization, middleRad)
@@ -166,7 +166,7 @@ fun PieChart(
                 val innerEndPointY = (centerY + innerRadius * sin(endRad)).toFloat()
 
                 //Create a Path for each slice
-                val path = Path().apply {
+                val path = path.apply {
                     //Move to the start point of the inner arc
                     moveTo(innerStartPointX, innerStartPointY)
                     //Draw the outer arc
@@ -199,12 +199,11 @@ fun PieChart(
                 data.sliceBorder?.let {
                     drawBorderInside(path, it)
                 }
+                path.reset()
                 val middleDeg = (startAngle + sweepAngle / 2f) % 360f
                 val middleRad = middleDeg * (PI / 180.0)
                 drawOnEachSlice?.let {
-                    with(PieChartDrawScopeImpl(this)) {
-                        it(this, slice.tag, centerX, centerY, outerRadius, innerRadius, middleRad)
-                    }
+                    it(this, slice.tag, centerX, centerY, outerRadius, innerRadius, middleRad)
                 }
                 if (slice.label != null && data.labelCustomization != null) {
                     drawLabel(slice.label, data.labelCustomization, middleRad)

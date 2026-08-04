@@ -20,10 +20,10 @@ import kotlin.jvm.JvmInline
  */
 class GridChartData {
     /**
-     * Common attributes of an axis
+     * Common attributes of an axis.
      *
      * @param gridLines Grid lines settings
-     * @param dividerCustomization
+     * @param dividerCustomization Axis divider customization
      */
     sealed interface Axis {
         val gridLines: GridLines?
@@ -32,7 +32,7 @@ class GridChartData {
         interface XAxis: Axis
 
         /**
-         * Common attributes of y-axis
+         * Common attributes of y-axis.
          *
          * @param offset Padding of the values from the start(x) and end(y) of the axis' viewport
          * @param minValue Minimum value of the axis, if null it will be calculated from the data
@@ -43,8 +43,11 @@ class GridChartData {
             val minValue: Double?
             val maxValue: Double?
         }
-        /** How and how much value labels to show. */
-        sealed interface Value {
+        /** How many value labels to show and the pattern to show them.
+         *
+         * You can make your own, if you don't like the default ones.
+         */
+        interface Value {
             fun getValues(minValue: ChartValueCoordinate, maxValue: ChartValueCoordinate): List<ChartValueCoordinate>
             /** Generates labels from minimum to maximum value by steps.
              *

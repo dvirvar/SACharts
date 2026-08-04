@@ -3,6 +3,7 @@ package com.skellyapps.charts.common.model
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.IntSize
 import kotlin.jvm.JvmInline
 
@@ -30,6 +31,17 @@ data class ChartValue(
 
     internal fun toChartPixel(
         chartSize: IntSize,
+        minXValue: ChartValueCoordinate,
+        maxXValue: ChartValueCoordinate,
+        minYValue: ChartValueCoordinate,
+        maxYValue: ChartValueCoordinate
+    ) = ChartPixel(
+        x.toChartPixelCoordinate(chartSize.width, minXValue, maxXValue, false),
+        y.toChartPixelCoordinate(chartSize.height, minYValue, maxYValue, true)
+    )
+
+    internal fun toChartPixel(
+        chartSize: Size,
         minXValue: ChartValueCoordinate,
         maxXValue: ChartValueCoordinate,
         minYValue: ChartValueCoordinate,

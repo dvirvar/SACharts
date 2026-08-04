@@ -48,6 +48,7 @@ import androidx.compose.ui.util.fastRoundToInt
 import com.skellyapps.charts.example.arrowValueStepper
 import com.skellyapps.charts.example.roundToDecimals
 import com.skellyapps.charts.pie.animation.PieChartAnimations
+import com.skellyapps.charts.pie.graphics.PieChartDrawHelper
 import com.skellyapps.charts.pie.model.PieChartData
 import com.skellyapps.charts.pie.view.PieChart
 import kotlinx.coroutines.launch
@@ -345,7 +346,7 @@ fun SimpleLabelsPieChartExample() {
                 } else {
                     if (sliceTag <=3) Color.White else Color.Black
                 }
-                drawTextInMiddle(
+                PieChartDrawHelper.drawTextInMiddle(
                     layout,
                     centerX,
                     centerY,
@@ -356,12 +357,13 @@ fun SimpleLabelsPieChartExample() {
                     textColor
                 )
                 if (slices.size > 1) {
+                    val radius = 5.dp.toPx()
                     val outerMiddlePointX = (centerX + outerRadius * cos(middleRad)).toFloat()
                     val outerMiddlePointY = (centerY + outerRadius * sin(middleRad)).toFloat()
-                    drawCircle(Color.Black, 5f, Offset(outerMiddlePointX, outerMiddlePointY))
+                    drawCircle(Color.Black, radius, Offset(outerMiddlePointX, outerMiddlePointY))
                     val innerMiddlePointX = (centerX + innerRadius * cos(middleRad)).toFloat()
                     val innerMiddlePointY = (centerY + innerRadius * sin(middleRad)).toFloat()
-                    drawCircle(Color.Black, 5f, Offset(innerMiddlePointX, innerMiddlePointY))
+                    drawCircle(Color.Black, radius, Offset(innerMiddlePointX, innerMiddlePointY))
                 }
             }
         )

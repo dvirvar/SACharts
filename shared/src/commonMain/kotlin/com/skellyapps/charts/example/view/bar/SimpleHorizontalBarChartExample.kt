@@ -22,7 +22,6 @@ import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -30,6 +29,7 @@ import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.model.HorizontalBarChartData
 import com.skellyapps.charts.bar.view.HorizontalBarChart
 import com.skellyapps.charts.common.model.ChartValueCoordinate
+import com.skellyapps.charts.common.model.DpCornerRadius
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.example.roundToDecimals
 import kotlin.random.Random
@@ -37,7 +37,7 @@ import kotlin.random.Random
 private var blueCategory = BarChartData.Category(
     (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
     0,
-    BarChartData.Category.Customization(Color.Blue, topRightCornerRadius = CornerRadius(5f), bottomRightCornerRadius = CornerRadius(5f)),
+    BarChartData.Category.Customization(Color.Blue, topRightCornerRadius = DpCornerRadius(5.dp), bottomRightCornerRadius = DpCornerRadius(5.dp)),
 )
 
 private val isLeftAxisState = mutableStateOf(true)
@@ -82,39 +82,38 @@ fun SimpleHorizontalBarChartExample() {
             referentialEqualityPolicy()
         )
     }
-    val isLeftAxis by retain(isLeftAxisState) { isLeftAxisState }
-    LaunchedEffect(isLeftAxis) {
-        val customization = if (isLeftAxis) {
+    LaunchedEffect(isLeftAxisState.value) {
+        val customization = if (isLeftAxisState.value) {
             blueCategory.customization.copy(
-                topRightCornerRadius = CornerRadius(5f),
-                bottomRightCornerRadius = CornerRadius(5f),
-                topLeftCornerRadius = CornerRadius.Zero,
-                bottomLeftCornerRadius = CornerRadius.Zero
+                topRightCornerRadius = DpCornerRadius(5.dp),
+                bottomRightCornerRadius = DpCornerRadius(5.dp),
+                topLeftCornerRadius = DpCornerRadius.Zero,
+                bottomLeftCornerRadius = DpCornerRadius.Zero
             )
         } else {
             blueCategory.customization.copy(
-                topLeftCornerRadius = CornerRadius(5f),
-                bottomLeftCornerRadius = CornerRadius(5f),
-                topRightCornerRadius = CornerRadius.Zero,
-                bottomRightCornerRadius = CornerRadius.Zero
+                topLeftCornerRadius = DpCornerRadius(5.dp),
+                bottomLeftCornerRadius = DpCornerRadius(5.dp),
+                topRightCornerRadius = DpCornerRadius.Zero,
+                bottomRightCornerRadius = DpCornerRadius.Zero
             )
         }
         blueCategory = blueCategory.copy(customization = customization)
-        chartData = chartData.copy(bottomAxis.copy(mutableListOf(blueCategory)), isLeftAxis)
+        chartData = chartData.copy(bottomAxis.copy(mutableListOf(blueCategory)), isLeftAxisState.value)
     }
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             Arrangement.spacedBy(8.dp)
         ) {
-            Row(Modifier.toggleable(isLeftAxis, role = Role.Checkbox) { isLeftAxisState.value = it }, verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(isLeftAxis, null)
+            Row(Modifier.toggleable(isLeftAxisState.value, role = Role.Checkbox) { isLeftAxisState.value = it }, verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(isLeftAxisState.value, null)
                 Text("Is left axis")
             }
         }
         Spacer(Modifier.height(8.dp))
         HorizontalBarChart(
-            Modifier.fillMaxWidth().height(300.dp).padding(start = if (isLeftAxis) 8.dp else 24.dp, end = if (isLeftAxis) 24.dp else 8.dp),
+            Modifier.fillMaxWidth().height(300.dp).padding(start = if (isLeftAxisState.value) 8.dp else 24.dp, end = if (isLeftAxisState.value) 24.dp else 8.dp),
             chartData,
         )
     }

@@ -21,7 +21,6 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -82,13 +81,13 @@ fun LineChartRealZoom(
     /**
      * For example drawing circles on points:
      * ```
-     * { canvasSize, lineTag, index, offset ->
+     * { lineTag, index, offset ->
      * val radius = 5.dp.toPx()
      * drawCircle(Color.Red, radius, offset)
      * }
      * ```
      */
-    drawOnEachPoint: (DrawScope.(canvasSize: Size, lineTag: Int, index: Int, offset: Offset) -> Unit)? = null,
+    drawOnEachPoint: (DrawScope.(lineTag: Int, index: Int, offset: Offset) -> Unit)? = null,
     pointClick: LineChartData.PointClick? = null,
     pointDrag: LineChartData.PointDrag? = null,
     pointDragAfterLongPress: LineChartData.PointDrag? = null,
@@ -493,7 +492,7 @@ fun LineChartRealZoom(
                             //Let the users config what they want on the point
                             drawOnEachPoint?.let {
                                 line.offsets.fastForEachIndexed { index, chartPixel ->
-                                    drawOnEachPoint(this, size, line.tag, index, chartPixel.offset)
+                                    drawOnEachPoint(this,  line.tag, index, chartPixel.offset)
                                 }
                             }
                         }
@@ -532,7 +531,7 @@ fun LineChartRealZoom(
                             //Let the users config what they want on the point
                             drawOnEachPoint?.let {
                                 line.offsets.fastForEachIndexed { index, chartPixel ->
-                                    drawOnEachPoint(this, size, line.tag, index, chartPixel.offset)
+                                    drawOnEachPoint(this, line.tag, index, chartPixel.offset)
                                 }
                             }
                         }

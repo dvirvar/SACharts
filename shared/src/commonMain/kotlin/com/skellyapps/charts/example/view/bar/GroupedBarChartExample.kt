@@ -31,15 +31,16 @@ import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import com.skellyapps.charts.bar.animation.BarChartAnimations
+import com.skellyapps.charts.bar.graphics.BarChartDrawHelper
 import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.view.BarChart
 import com.skellyapps.charts.common.model.ChartValueCoordinate
+import com.skellyapps.charts.common.model.DpCornerRadius
 import com.skellyapps.charts.common.model.GridChartData
 import com.skellyapps.charts.common.model.Position
 import com.skellyapps.charts.example.roundToDecimals
@@ -49,7 +50,7 @@ import kotlin.random.Random
 private val blueCategory = BarChartData.Category(
     (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
     0,
-    BarChartData.Category.Customization(Color.Blue, topLeftCornerRadius = CornerRadius(5f), topRightCornerRadius = CornerRadius(5f)),
+    BarChartData.Category.Customization(Color.Blue, topLeftCornerRadius = DpCornerRadius(5.dp), topRightCornerRadius = DpCornerRadius(5.dp)),
 )
 
 private val yAxis = BarChartData.YAxis(
@@ -95,7 +96,7 @@ private fun generateCategory(): BarChartData.Category {
     return BarChartData.Category(
         (0..12).map { ChartValueCoordinate(Random.nextDouble(-30.0, 30.0)) }.toMutableList(),
         currentColor,
-        BarChartData.Category.Customization(colors[currentColor], topLeftCornerRadius = CornerRadius(5f), topRightCornerRadius = CornerRadius(5f)),
+        BarChartData.Category.Customization(colors[currentColor], topLeftCornerRadius = DpCornerRadius(5.dp), topRightCornerRadius = DpCornerRadius(5.dp)),
     )
 }
 
@@ -160,13 +161,12 @@ fun GroupedBarChartExample() {
             chartData,
             animations = animations,
             barHover = barHover
-        ) { canvasSize, categoryTag, index, barRect, isNegative ->
+        ) { categoryTag, index, barRect, isNegative ->
             val value = yAxis.categories[categoryTag].values[index].value
             val text = value.roundToDecimals(1).toString()
             val layout = textMeasurer.measure(text)
-            drawTextOutside(
+            BarChartDrawHelper.drawTextOutside(
                 layout,
-                canvasSize,
                 barRect,
                 true,
                 isNegative,
