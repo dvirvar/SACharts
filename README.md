@@ -16,7 +16,7 @@ Supports Android, iOS, Desktop, and Web.
 
 ## 🚀 Key Features
 * **Line Charts:** Dual Y-axes support, real-time point dragging (direct or via long-press), panning/zooming. Customizable axes labels, points(you can draw whatever you want on a point) and click overlays.
-* **Bar & Horizontal Bar Charts:** Grouped and stacked category data models, axis alignment. Customizable axes labels, bar values(you can draw whatever you want on a bar), bars with corner radius and brush fills.
+* **Bar & Horizontal Bar Charts:** Grouped and stacked category data models, axis alignment. Customizable axes labels, bar values(you can draw whatever you want on a bar), bar hover, bars with corner radius and brush fills.
 * **Pie & Dynamic Pie Charts:** Support for donut holes. Customizable slice gaps, internal slice borders, value labels and external pointing labels.
 * **Dynamic Sizing:** `DynamicPieChart` auto-calculates available space, resizing dynamically fit accordingly to your data and customizations.
 * **Animations:** All charts support animations.
@@ -318,7 +318,7 @@ A simple vertical bar chart with left y-axis and bottom x-axis.
 
 Y-axis contains:
 - A blue category with 13 values, a tag of 0 and top corner radius
-- Grouped type with 0 space between bard and 5 dp space between categories
+- Grouped type with 0 space between bars and 5 dp space between categories
 - Showing minimum value of -30 and maximum value of 30
 - Showing fixed amount(15) of value labels
 - Grid lines colored gray and have a thickness of 1.dp
@@ -415,7 +415,7 @@ private val barHover = BarChartData.BarHover(
     viewOffset = DpOffset.Zero,//How far from the position the view will be anchored
     viewStayInChartBounds = true//Keep view in chart bounds
 ) { categoryTag, index ->
-    val value = yAxis.categories.[categoryTag].values[index]
+    val value = yAxis.categories[categoryTag].values[index]
     Box(Modifier.background(colors[categoryTag].copy(0.9f), CircleShape).padding(8.dp), Alignment.Center) {
         Text(value.roundToDecimals(1).toString(), color = Color.White)
     }
