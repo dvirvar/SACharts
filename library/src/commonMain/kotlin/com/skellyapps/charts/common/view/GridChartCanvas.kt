@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
+import com.skellyapps.charts.common.extension.toOffset
 import com.skellyapps.charts.common.model.ChartValueCoordinate
 import com.skellyapps.charts.common.model.GridChartData
 
@@ -33,6 +34,8 @@ internal fun GridChartCanvas(
     leftAxisValues: List<ChartValueCoordinate>,
     rightAxisValues: List<ChartValueCoordinate>,
     bottomAxisValues: List<ChartValueCoordinate>,
+    yAxisInverted: Boolean,
+    xAxisInverted: Boolean,
     content: @Composable BoxWithConstraintsScope.() -> Unit
 ) {
     BoxWithConstraints(modifier) {
@@ -45,7 +48,7 @@ internal fun GridChartCanvas(
                     val startIndex = if (it.showFirstLine) 0 else 1
                     val endIndex = if (it.showLastLine) leftAxisValues.size - 1 else leftAxisValues.size - 2
                     for (i in startIndex..endIndex) {
-                        val yOffset = leftAxisValues[i].toChartPixelCoordinate(size.height, leftAxisMinYValue, leftAxisMaxYValue, true).value
+                        val yOffset = leftAxisValues[i].toChartPixelCoordinate(size.height, leftAxisMinYValue, leftAxisMaxYValue, yAxisInverted).value
                         drawLine(
                             it.customization.brush,
                             Offset(0f, yOffset),
@@ -67,7 +70,7 @@ internal fun GridChartCanvas(
                     val startIndex = if (it.showFirstLine) 0 else 1
                     val endIndex = if (it.showLastLine) rightAxisValues.size - 1 else rightAxisValues.size - 2
                     for (i in startIndex..endIndex) {
-                        val yOffset = rightAxisValues[i].toChartPixelCoordinate(size.height, rightAxisMinYValue, rightAxisMaxYValue, true).value
+                        val yOffset = rightAxisValues[i].toChartPixelCoordinate(size.height, rightAxisMinYValue, rightAxisMaxYValue, yAxisInverted).value
                         drawLine(
                             it.customization.brush,
                             Offset(size.width, yOffset),
@@ -89,7 +92,7 @@ internal fun GridChartCanvas(
                     val startIndex = if (it.showFirstLine) 0 else 1
                     val endIndex = if (it.showLastLine) bottomAxisValues.size - 1 else bottomAxisValues.size - 2
                     for (i in startIndex..endIndex) {
-                        val xOffset = bottomAxisValues[i].toChartPixelCoordinate(size.width, minXValue, maxXValue, false).value
+                        val xOffset = bottomAxisValues[i].toChartPixelCoordinate(size.width, minXValue, maxXValue, xAxisInverted).value
                         drawLine(
                             it.customization.brush,
                             Offset(xOffset, 0f),
@@ -192,7 +195,7 @@ internal fun GridChartCanvas(
                     val thickness = it.customization.thickness.toPx()
                     val startIndex = if (it.showFirstLine) 0 else 1
                     val endIndex = if (it.showLastLine) leftAxisValues.size - 1 else leftAxisValues.size - 2
-                    val offset = Offset(axis.offset.x.toPx(), axis.offset.y.toPx())
+                    val offset = axis.offset.toOffset()
                     for (i in startIndex..endIndex) {
                         val yOffset = leftAxisValues[i].toChartPixelCoordinate(size.height, offset, leftAxisMinYValue, leftAxisMaxYValue, true).value
                         drawLine(
@@ -215,7 +218,7 @@ internal fun GridChartCanvas(
                     val thickness = it.customization.thickness.toPx()
                     val startIndex = if (it.showFirstLine) 0 else 1
                     val endIndex = if (it.showLastLine) rightAxisValues.size - 1 else rightAxisValues.size - 2
-                    val offset = Offset(axis.offset.x.toPx(), axis.offset.y.toPx())
+                    val offset = axis.offset.toOffset()
                     for (i in startIndex..endIndex) {
                         val yOffset = rightAxisValues[i].toChartPixelCoordinate(size.height, offset, rightAxisMinYValue, rightAxisMaxYValue, true).value
                         drawLine(
@@ -238,9 +241,8 @@ internal fun GridChartCanvas(
                     val thickness = it.customization.thickness.toPx()
                     val startIndex = if (it.showFirstLine) 0 else 1
                     val endIndex = if (it.showLastLine) bottomAxisValues.size - 1 else bottomAxisValues.size - 2
-                    val offset = Offset(xAxisOffset.x, xAxisOffset.y)
                     for (i in startIndex..endIndex) {
-                        val xOffset = bottomAxisValues[i].toChartPixelCoordinate(size.width, offset, minXValue, maxXValue, false).value
+                        val xOffset = bottomAxisValues[i].toChartPixelCoordinate(size.width, xAxisOffset, minXValue, maxXValue, false).value
                         drawLine(
                             it.customization.brush,
                             Offset(xOffset, 0f),

@@ -46,7 +46,7 @@ kotlin {
 mavenPublishing {
     publishToMavenCentral()
     signAllPublications()
-    coordinates("io.github.dvirvar", "sacharts", "1.0")
+    coordinates("io.github.dvirvar", "sacharts", "1.0.1")
 
     pom {
         name = "SACharts"

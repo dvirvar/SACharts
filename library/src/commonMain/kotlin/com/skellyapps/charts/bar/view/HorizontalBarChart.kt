@@ -44,6 +44,7 @@ import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.model.HorizontalBarChartData
 import com.skellyapps.charts.bar.model.TaggedOffsetEqualityPolicy
 import com.skellyapps.charts.common.extension.`if`
+import com.skellyapps.charts.common.extension.toOffset
 import com.skellyapps.charts.common.model.ChartPixel
 import com.skellyapps.charts.common.model.ChartPixelCoordinate
 import com.skellyapps.charts.common.model.ChartValue
@@ -80,7 +81,7 @@ fun HorizontalBarChart(
             Offset.Zero
         } else {
             with(density) {
-                Offset(data.yAxis.offset.x.toPx(), data.yAxis.offset.y.toPx())
+                data.yAxis.offset.toOffset()
             }
         }
     }
@@ -127,7 +128,7 @@ fun HorizontalBarChart(
     val yAxisMinValue = remember { ChartValueCoordinate(0.0) }
     val yAxisMaxValue by remember(data.bottomAxis.categories) {
         derivedStateOf {
-            ChartValueCoordinate(data.bottomAxis.categories.fastFilter { it.values.isNotEmpty() }.maxOfOrNull { it.values.size }?.toDouble() ?: 0.0)
+            ChartValueCoordinate(data.bottomAxis.categories.fastFilter { it.values.isNotEmpty() }.maxOfOrNull { it.values.size }?.toDouble() ?: 1.0)
         }
     }
     val yAxisViewport = remember(canvasSize.height, yAxisOffset, yAxisMaxValue) {
@@ -147,12 +148,14 @@ fun HorizontalBarChart(
         val maxValue = yAxisMaxValue.value.toFloat()
         (canvasSize.height.toFloat() - yAxisOffset.x - yAxisOffset.y - ((maxValue - 1f) * categoriesSpace)) / maxValue
     }
-    val yAxisValues: List<ChartValueCoordinate> = remember(canvasSize.height, yAxisMaxValue, yAxisOffset, yAxisViewport, categoriesSpace, categoryHeight) {
+    val yAxisValues: List<ChartValueCoordinate> = remember(canvasSize.height, yAxisMaxValue, yAxisViewport, categoriesSpace, categoryHeight) {
         val values = mutableListOf<ChartValueCoordinate>()
-        val offset = ChartPixelCoordinate(categoryHeight / 2f).toChartValueCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, false)
-        val categoriesOffset = ChartPixelCoordinate(categoryHeight + categoriesSpace).toChartValueCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, false).value
-        for (i in yAxisMinValue.value.toInt()..yAxisMaxValue.value.toInt()) {
-            values.add(ChartValueCoordinate(offset.value + (categoriesOffset * i)))
+        val baseYValue = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.height, yAxisViewport.x, yAxisViewport.y, false)
+        val offset = ChartPixelCoordinate(categoryHeight / 2f)
+        val categoriesOffset = ChartPixelCoordinate(categoryHeight + categoriesSpace)
+        for (i in yAxisMinValue.value.toInt()..<yAxisMaxValue.value.toInt()) {
+            val pixel = (baseYValue + offset + (categoriesOffset * i))
+            values.add(pixel.toChartValueCoordinate(canvasSize.height, yAxisViewport.x, yAxisViewport.y, false))
         }
         values
     }
@@ -173,7 +176,7 @@ fun HorizontalBarChart(
         derivedStateOf {
             val offsetCategories = mutableListOf<BarChartData.OffsetCategory>()
             if (data.bottomAxis.categories.isNotEmpty()) {
-                val baseValueXPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
+                val baseValueXPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
                 when(data.bottomAxis.type) {
                     is BarChartData.Type.Grouped -> {
                         val barsSpace = with(density) {
@@ -184,7 +187,7 @@ fun HorizontalBarChart(
                             val baseYPixel = yAxisOffset.x + ((barHeight + barsSpace) * categoryIndex)
                             category.values.fastForEachIndexed { index, value ->
                                 val yPixel = baseYPixel + ((categoryHeight + categoriesSpace) * index)
-                                val valueXPixel = value.toChartPixelCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
+                                val valueXPixel = value.toChartPixelCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
                                 val isNegative = value.value < 0.0
                                 val isLeftToRight = isNegative == data.isLeftYAxis
                                 val xPixel = if (isLeftToRight) {
@@ -203,7 +206,7 @@ fun HorizontalBarChart(
                         val lastValues = category.values.toMutableList()
                         lastValues.fastForEachIndexed { index, value ->
                             val yPixel = yAxisOffset.x + ((categoryHeight + categoriesSpace) * index)
-                            val valueXPixel = value.toChartPixelCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
+                            val valueXPixel = value.toChartPixelCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
                             val xPixel = if (data.isLeftYAxis) {
                                 baseValueXPixel
                             } else {
@@ -224,8 +227,8 @@ fun HorizontalBarChart(
                                     lastValues[index] = currentValue
                                 }
                                 val yPixel = yAxisOffset.x + ((categoryHeight + categoriesSpace) * index)
-                                val currentValueXPixel = currentValue.toChartPixelCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
-                                val lastValueXPixel = lastValue.toChartPixelCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
+                                val currentValueXPixel = currentValue.toChartPixelCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
+                                val lastValueXPixel = lastValue.toChartPixelCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
                                 val xPixel = if (data.isLeftYAxis) {
                                     lastValueXPixel
                                 } else {
@@ -280,7 +283,9 @@ fun HorizontalBarChart(
                 xAxisViewport.y,
                 if (data.isLeftYAxis) yAxisValues else listOf(),
                 if (!data.isLeftYAxis) yAxisValues else listOf(),
-                xAxisValues
+                xAxisValues,
+                false,
+                !data.isLeftYAxis
             ) {
                 Box(
                     Modifier
@@ -302,7 +307,7 @@ fun HorizontalBarChart(
                         .drawWithCache {
                             val path = Path()
                             onDrawWithContent {
-                                val baseValueXPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
+                                val baseValueXPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, !data.isLeftYAxis).value
                                 offsetCategories.fastForEachIndexed { categoryIndex, category ->
                                     category.offsets.fastForEachIndexed { offsetIndex, offset ->
                                         val rect = if (animations.growth != null) {

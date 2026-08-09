@@ -65,4 +65,11 @@ internal value class ChartPixelCoordinate(val value: Float) {
     } else {
         ChartValueCoordinate((value / chartSize) * (maxCoordinate - minCoordinate).value + minCoordinate.value)
     }
+
+    @Stable
+    inline operator fun plus(other: ChartPixelCoordinate) = ChartPixelCoordinate(value + other.value)
+    @Stable
+    inline operator fun minus(other: ChartPixelCoordinate) = ChartPixelCoordinate(value - other.value)
+    @Stable
+    inline operator fun times(other: Int) = ChartPixelCoordinate(value * other)
 }

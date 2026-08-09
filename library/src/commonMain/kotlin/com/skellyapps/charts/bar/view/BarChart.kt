@@ -43,6 +43,7 @@ import com.skellyapps.charts.bar.extension.binarySearch
 import com.skellyapps.charts.bar.model.BarChartData
 import com.skellyapps.charts.bar.model.TaggedOffsetEqualityPolicy
 import com.skellyapps.charts.common.extension.`if`
+import com.skellyapps.charts.common.extension.toOffset
 import com.skellyapps.charts.common.model.ChartPixel
 import com.skellyapps.charts.common.model.ChartPixelCoordinate
 import com.skellyapps.charts.common.model.ChartValue
@@ -81,13 +82,13 @@ fun BarChart(
     val yAxisOffset = remember { Offset.Zero }
     val xAxisOffset = remember(data.xAxisOffset, density) {
         with(density) {
-            Offset(data.xAxisOffset.x.toPx(), data.xAxisOffset.y.toPx())
+            data.xAxisOffset.toOffset()
         }
     }
     val minXValue = remember { ChartValueCoordinate(0.0) }
     val maxXValue by remember(data.yAxis.categories) {
         derivedStateOf {
-            ChartValueCoordinate(data.yAxis.categories.fastFilter { it.values.isNotEmpty() }.maxOfOrNull { it.values.size }?.toDouble() ?: 0.0)
+            ChartValueCoordinate(data.yAxis.categories.fastFilter { it.values.isNotEmpty() }.maxOfOrNull { it.values.size }?.toDouble() ?: 1.0)
         }
     }
     val xAxisViewport = remember(canvasSize.width,xAxisOffset, maxXValue) {
@@ -146,12 +147,14 @@ fun BarChart(
         val maxValue = maxXValue.value.toFloat()
         (canvasSize.width.toFloat() - xAxisOffset.x - xAxisOffset.y - ((maxValue - 1f) * categoriesSpace)) / maxValue
     }
-    val bottomAxisValues: List<ChartValueCoordinate> = remember(canvasSize.width, maxXValue, xAxisOffset, xAxisViewport) {
+    val bottomAxisValues: List<ChartValueCoordinate> = remember(canvasSize.width, categoriesSpace, categoryWidth, maxXValue, xAxisViewport) {
         val values = mutableListOf<ChartValueCoordinate>()
-        val offset = ChartPixelCoordinate(categoryWidth / 2f).toChartValueCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, false)
-        val categoriesOffset = ChartPixelCoordinate(categoryWidth + categoriesSpace).toChartValueCoordinate(canvasSize.width, xAxisOffset, xAxisViewport.x, xAxisViewport.y, false).value
-        for (i in minXValue.value.toInt()..maxXValue.value.toInt()) {
-            values.add(ChartValueCoordinate(offset.value + (categoriesOffset * i)))
+        val baseXValue = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, false)
+        val offset = ChartPixelCoordinate(categoryWidth / 2f)
+        val categoriesOffset = ChartPixelCoordinate(categoryWidth + categoriesSpace)
+        for (i in minXValue.value.toInt()..<maxXValue.value.toInt()) {
+            val pixel = (baseXValue + offset + (categoriesOffset * i))
+            values.add(pixel.toChartValueCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, false))
         }
         values
     }
@@ -168,11 +171,11 @@ fun BarChart(
             }
         }
     }
-    val offsetCategories by remember(data.yAxis.categories, barWidth, yAxisViewport, xAxisOffset.x) {
+    val offsetCategories by remember(data.yAxis.categories, barWidth, xAxisViewport, yAxisViewport) {
         derivedStateOf {
             val offsetCategories = mutableListOf<BarChartData.OffsetCategory>()
             if (data.yAxis.categories.isNotEmpty()) {
-                val baseValueYPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, true).value
+                val baseValueYPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.height, yAxisViewport.x, yAxisViewport.y, true).value
                 when(data.yAxis.type) {
                     is BarChartData.Type.Grouped -> {
                         val barsSpace = with(density) {
@@ -180,10 +183,11 @@ fun BarChart(
                         }
                         for ((categoryIndex, category) in data.yAxis.categories.withIndex()) {
                             val offsets = mutableListOf<BarChartData.OffsetCategory.Offset>()
+//                            val baseXPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, false).value
                             val baseXPixel = xAxisOffset.x + ((barWidth + barsSpace) * categoryIndex)
                             category.values.fastForEachIndexed { index, value ->
                                 val xPixel = baseXPixel + ((categoryWidth + categoriesSpace) * index)
-                                val valueYPixel = value.toChartPixelCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, true).value
+                                val valueYPixel = value.toChartPixelCoordinate(canvasSize.height,yAxisViewport.x,yAxisViewport.y,true).value
                                 val isNegative = value.value < 0.0
                                 val yPixel = if (isNegative) {
                                     baseValueYPixel
@@ -201,7 +205,7 @@ fun BarChart(
                         val lastValues = category.values.toMutableList()
                         lastValues.fastForEachIndexed { index, value ->
                             val xPixel = xAxisOffset.x + ((categoryWidth + categoriesSpace) * index)
-                            val valueYPixel = value.toChartPixelCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, true).value
+                            val valueYPixel = value.toChartPixelCoordinate(canvasSize.height, yAxisViewport.x, yAxisViewport.y, true).value
                             offsets.add(BarChartData.OffsetCategory.Offset(ChartPixel(Offset(xPixel, valueYPixel)), Size(barWidth, baseValueYPixel - valueYPixel), false))
                         }
                         offsetCategories.add(BarChartData.OffsetCategory(offsets, category.tag, category.customization))
@@ -217,8 +221,8 @@ fun BarChart(
                                     lastValues[index] = currentValue
                                 }
                                 val xPixel = xAxisOffset.x + ((categoryWidth + categoriesSpace) * index)
-                                val currentValueYPixel = currentValue.toChartPixelCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, true).value
-                                val lastValueYPixel = lastValue.toChartPixelCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, true).value
+                                val currentValueYPixel = currentValue.toChartPixelCoordinate(canvasSize.height, yAxisViewport.x, yAxisViewport.y, true).value
+                                val lastValueYPixel = lastValue.toChartPixelCoordinate(canvasSize.height, yAxisViewport.x, yAxisViewport.y, true).value
                                 offsets.add(BarChartData.OffsetCategory.Offset(ChartPixel(Offset(xPixel, currentValueYPixel)), Size(barWidth, lastValueYPixel - currentValueYPixel), false))
                             }
                             offsetCategories.add(BarChartData.OffsetCategory(offsets, category.tag, category.customization))
@@ -268,7 +272,9 @@ fun BarChart(
                 xAxisViewport.y,
                 if (data.isLeftYAxis) yAxisValues else listOf(),
                 if (!data.isLeftYAxis) yAxisValues else listOf(),
-                bottomAxisValues
+                bottomAxisValues,
+                true,
+                false
             ) {
                 Box(
                     Modifier
@@ -290,8 +296,12 @@ fun BarChart(
                         .drawWithCache {
                             val path = Path()
                             onDrawWithContent {
-                                val baseValueYPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.height, yAxisOffset, yAxisViewport.x, yAxisViewport.y, true).value
+                                val baseValueYPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.height, yAxisViewport.x, yAxisViewport.y, true).value
                                 offsetCategories.fastForEachIndexed { categoryIndex, category ->
+                                    val topLeftCornerRadius = category.customization.topLeftCornerRadius.toCornerRadius()
+                                    val topRightCornerRadius = category.customization.topRightCornerRadius.toCornerRadius()
+                                    val bottomRightCornerRadius = category.customization.bottomRightCornerRadius.toCornerRadius()
+                                    val bottomLeftCornerRadius = category.customization.bottomLeftCornerRadius.toCornerRadius()
                                     category.offsets.fastForEachIndexed { offsetIndex, offset ->
                                         val rect = if (animations.growth != null) {
                                             when(data.yAxis.type) {
@@ -320,10 +330,10 @@ fun BarChart(
                                         path.addRoundRect(
                                             RoundRect(
                                                 rect,
-                                                topLeft = (if (offset.isNegative) category.customization.bottomLeftCornerRadius else category.customization.topLeftCornerRadius).toCornerRadius(),
-                                                topRight = (if (offset.isNegative) category.customization.bottomRightCornerRadius else category.customization.topRightCornerRadius).toCornerRadius(),
-                                                bottomRight = (if (offset.isNegative) category.customization.topRightCornerRadius else category.customization.bottomRightCornerRadius).toCornerRadius(),
-                                                bottomLeft = (if (offset.isNegative) category.customization.topLeftCornerRadius else category.customization.bottomLeftCornerRadius).toCornerRadius(),
+                                                topLeft = if (offset.isNegative) bottomLeftCornerRadius else topLeftCornerRadius,
+                                                topRight = if (offset.isNegative) bottomRightCornerRadius else topRightCornerRadius,
+                                                bottomRight = if (offset.isNegative) topRightCornerRadius else bottomRightCornerRadius,
+                                                bottomLeft = if (offset.isNegative) topLeftCornerRadius else bottomLeftCornerRadius,
                                             )
                                         )
                                     }

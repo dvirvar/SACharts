@@ -118,16 +118,8 @@ class LineChartDrawHelper internal constructor(
 
     context(d: DrawScope)
     fun ChartValueCoordinate.toYPixel(isLeftAxis: Boolean): Float {
-        val minCoordinate = if (isLeftAxis) {
-            leftAxisYViewport.x
-        } else {
-            rightAxisYViewport.x
-        }
-        val maxCoordinate = if (isLeftAxis) {
-            leftAxisYViewport.y
-        } else {
-            rightAxisYViewport.y
-        }
+        val minCoordinate = if (isLeftAxis) leftAxisYViewport.x else rightAxisYViewport.x
+        val maxCoordinate = if (isLeftAxis) leftAxisYViewport.y else rightAxisYViewport.y
         return toChartPixelCoordinate(d.size.height, minCoordinate, maxCoordinate, true).value
     }
 }
