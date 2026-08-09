@@ -29,7 +29,7 @@ Add the dependency to your shared module's `commonMain` source set:
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation("io.github.dvirvar:sacharts:1.0")
+            implementation("io.github.dvirvar:sacharts:1.0.1")
         }
     }
 }
