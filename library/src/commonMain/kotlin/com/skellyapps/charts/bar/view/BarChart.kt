@@ -183,7 +183,6 @@ fun BarChart(
                         }
                         for ((categoryIndex, category) in data.yAxis.categories.withIndex()) {
                             val offsets = mutableListOf<BarChartData.OffsetCategory.Offset>()
-//                            val baseXPixel = ChartValueCoordinate(0.0).toChartPixelCoordinate(canvasSize.width, xAxisViewport.x, xAxisViewport.y, false).value
                             val baseXPixel = xAxisOffset.x + ((barWidth + barsSpace) * categoryIndex)
                             category.values.fastForEachIndexed { index, value ->
                                 val xPixel = baseXPixel + ((categoryWidth + categoriesSpace) * index)

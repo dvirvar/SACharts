@@ -251,7 +251,7 @@ fun LineChart(
     }
     val rightAxisYViewport by remember(rightAxisYOffset, rightAxisMinYValue, rightAxisMaxYValue) {
         derivedStateOf {
-             val y = ChartPixelCoordinate(canvasOffset.y + canvasSize.height.toFloat() / canvasZoom.y).toChartValueCoordinate(canvasSize.height, rightAxisYOffset, rightAxisMinYValue, rightAxisMaxYValue, true)
+            val y = ChartPixelCoordinate(canvasOffset.y + canvasSize.height.toFloat() / canvasZoom.y).toChartValueCoordinate(canvasSize.height, rightAxisYOffset, rightAxisMinYValue, rightAxisMaxYValue, true)
             val maxY = ChartPixelCoordinate(canvasOffset.y).toChartValueCoordinate(canvasSize.height, rightAxisYOffset, rightAxisMinYValue, rightAxisMaxYValue, true)
             ChartValue(y, maxY)
         }
@@ -348,15 +348,23 @@ fun LineChart(
                                 if (type == PointerEventType.Scroll || changes.size > 1) {
                                     val newScale = if (type == PointerEventType.Scroll) {
                                         val addition = if (gestureZoom < 0f) zoom!!.scrollJump else -zoom!!.scrollJump
-                                        Offset((canvasZoom.x + addition).coerceIn(1f, zoom.max), (canvasZoom.y + addition).coerceIn(1f, zoom.max))
-                                    } else {
-                                        var x = canvasZoom.x
-                                        if (orientation != Orientation.Vertical) {
-                                            x = (x * gestureZoom).coerceIn(1f, zoom!!.max)
+                                        canvasZoom.run {
+                                            when(zoom.orientation) {
+                                                Orientation.Vertical -> copy(y = (y + addition).coerceIn(1f, zoom.max))
+                                                Orientation.Horizontal -> copy((x + addition).coerceIn(1f, zoom.max))
+                                                null -> Offset((x + addition).coerceIn(1f, zoom.max), (y + addition).coerceIn(1f, zoom.max))
+                                            }
                                         }
-                                        var y = canvasZoom.y
-                                        if (orientation != Orientation.Horizontal) {
-                                            y = (y * gestureZoom).coerceIn(1f, zoom!!.max)
+                                    } else {
+                                        val x = if (orientation != Orientation.Vertical && zoom!!.orientation != Orientation.Vertical) {
+                                            (canvasZoom.x * gestureZoom).coerceIn(1f, zoom.max)
+                                        } else {
+                                            canvasZoom.x
+                                        }
+                                        val y = if (orientation != Orientation.Horizontal && zoom!!.orientation != Orientation.Horizontal) {
+                                            (canvasZoom.y * gestureZoom).coerceIn(1f, zoom.max)
+                                        } else {
+                                            canvasZoom.y
                                         }
                                         Offset(x, y)
                                     }
